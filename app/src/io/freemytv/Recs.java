@@ -44,6 +44,7 @@ final class Recs {
         int id;
         String kind;            // "movie" or "tv"
         String title, backdrop, meta = "", app, pkg;
+        String deepLink;
         boolean detailed;
     }
 
@@ -53,7 +54,7 @@ final class Recs {
     private static final String IMAGES = "https://image.tmdb.org/t/p/original";
     private static final long LIST_EVERY = 6 * 3600_000L;
     /** Bump when what is saved for each title changes (the saved list is discarded and fetched again). */
-    private static final int CACHE_VERSION = 3;
+    private static final int CACHE_VERSION = 4;
     private static final int MANHA = 0, TARDE = 1, NOITE = 2;
     static final String[] PERIOD_LABEL = {"PARA ESTA MANHÃ", "PARA ESTA TARDE", "PARA ESTA NOITE"};
     static final String[] PERIOD_LABEL_EN = {"THIS MORNING", "THIS AFTERNOON", "TONIGHT"};
@@ -454,7 +455,7 @@ final class Recs {
     /** Genre, runtime (or seasons) and the service it's on, among the ones the TV has. */
     private void fetchDetails(Pick p) throws Exception {
         JSONObject o = get("/" + p.kind + "/" + p.id
-                + "?language=" + lang() + "&append_to_response=watch/providers,images&include_image_language=null," + Ui.language + ",en");
+                + "?language=" + lang() + "&append_to_response=watch/providers,images,external_ids&include_image_language=null," + Ui.language + ",en");
         String best = bestBackdrop(o.optJSONObject("images"));
         if (best != null) p.backdrop = best;
         List<String> parts = new ArrayList<>();
@@ -485,9 +486,132 @@ final class Recs {
                 p.pkg = s[2];
             }
         }
-        if (p.app != null) parts.add(SERVICE_NAME.get(p.app));
+        if (p.app != null) {
+            JSONObject ext = o.optJSONObject("external_ids");
+            String wikidataId = ext != null ? ext.optString("wikidata_id", "") : "";
+            if ("null".equals(wikidataId)) wikidataId = "";
+            String tmdbLink = br != null ? br.optString("link", "") : "";
+            p.deepLink = resolveDeepLink(p, wikidataId, tmdbLink);
+            AppLog.w("Resolved deep-link for '" + p.title + "' on " + p.app + ": " + p.deepLink);
+            parts.add(SERVICE_NAME.get(p.app));
+        }
         p.meta = String.join(" · ", parts);
         p.detailed = true;
+    }
+
+    /** Resolves a direct deep link into the movie/show page on the streaming service using TMDB + Wikidata. */
+    private String resolveDeepLink(Pick p, String wikidataId, String tmdbLink) {
+        if (p.app == null) return null;
+        if (wikidataId != null && !wikidataId.isEmpty()) {
+            try {
+                String itemId = fetchWikidataId(wikidataId, p.app);
+                if (itemId != null && !itemId.isEmpty()) {
+                    String link = formatDeepLink(p.app, p.kind, itemId);
+                    if (link != null) return link;
+                }
+            } catch (Exception ignored) {
+            }
+        }
+        return fallbackDeepLink(p, tmdbLink);
+    }
+
+    /** Queries Wikidata entity data for the service-specific catalog ID. */
+    private String fetchWikidataId(String wikidataId, String app) {
+        String prop = wikidataProperty(app);
+        if (prop == null) return null;
+        try {
+            URL url = new URL("https://www.wikidata.org/wiki/Special:EntityData/" + wikidataId + ".json");
+            HttpURLConnection c = (HttpURLConnection) url.openConnection();
+            c.setConnectTimeout(4000);
+            c.setReadTimeout(4000);
+            c.setRequestProperty("Accept", "application/json");
+            c.setRequestProperty("User-Agent", "FreeMyTV/1.0 (https://freemytv.io)");
+            try {
+                if (c.getResponseCode() != 200) return null;
+                JSONObject root = new JSONObject(read(c.getInputStream()));
+                JSONObject entities = root.optJSONObject("entities");
+                if (entities == null) return null;
+                JSONObject entity = entities.optJSONObject(wikidataId);
+                if (entity == null) return null;
+                JSONObject claims = entity.optJSONObject("claims");
+                if (claims == null) return null;
+
+                String[] propsToCheck = "netflix".equals(app) ? new String[] {"P1874", "P3879"}
+                        : "paramount".equals(app) ? new String[] {"P11847", "P7832"}
+                        : new String[] {prop};
+
+                for (String pKey : propsToCheck) {
+                    JSONArray arr = claims.optJSONArray(pKey);
+                    if (arr != null && arr.length() > 0) {
+                        JSONObject mainsnak = arr.getJSONObject(0).optJSONObject("mainsnak");
+                        if (mainsnak != null) {
+                            JSONObject datavalue = mainsnak.optJSONObject("datavalue");
+                            if (datavalue != null) {
+                                Object val = datavalue.opt("value");
+                                if (val instanceof String) return (String) val;
+                                if (val != null) return String.valueOf(val);
+                            }
+                        }
+                    }
+                }
+            } finally {
+                c.disconnect();
+            }
+        } catch (Exception ignored) {
+        }
+        return null;
+    }
+
+    private static String wikidataProperty(String app) {
+        switch (app) {
+            case "netflix": return "P1874";
+            case "prime": return "P8055";
+            case "disney": return "P7595";
+            case "appletv": return "P9586";
+            case "max": return "P11844";
+            case "hulu": return "P6466";
+            case "paramount": return "P11847";
+            case "peacock": return "P11848";
+            default: return null;
+        }
+    }
+
+    private static String formatDeepLink(String app, String kind, String id) {
+        if (id == null || id.isEmpty()) return null;
+        switch (app) {
+            case "netflix":
+                return "http://www.netflix.com/title/" + id;
+            case "prime":
+                return "https://app.primevideo.com/detail?gti=" + id;
+            case "disney":
+                return "https://www.disneyplus.com/video/" + id;
+            case "appletv":
+                return "https://tv.apple.com/" + ("tv".equals(kind) ? "show" : "movie") + "/" + id;
+            case "max":
+                return "https://play.max.com/video/watch/" + id;
+            case "hulu":
+                return "https://www.hulu.com/watch/" + id;
+            case "paramount":
+                return "https://www.paramountplus.com/movies/" + id;
+            case "peacock":
+                return "https://www.peacocktv.com/watch/asset/" + id;
+            default:
+                return null;
+        }
+    }
+
+    private static String fallbackDeepLink(Pick p, String tmdbLink) {
+        try {
+            if ("netflix".equals(p.app)) {
+                return "http://www.netflix.com/search?q=" + URLEncoder.encode(p.title, "UTF-8");
+            } else if ("prime".equals(p.app)) {
+                return "https://app.primevideo.com/search?phrase=" + URLEncoder.encode(p.title, "UTF-8");
+            } else if ("disney".equals(p.app)) {
+                return "https://www.disneyplus.com/search?q=" + URLEncoder.encode(p.title, "UTF-8");
+            }
+        } catch (Exception ignored) {
+        }
+        return (tmdbLink != null && !tmdbLink.isEmpty()) ? tmdbLink : null;
     }
 
     /** TV genres that TMDB returns in English even in pt-BR or th-TH. */
@@ -656,6 +780,7 @@ final class Recs {
             for (Pick p : picks) {
                 a.put(new JSONObject().put("id", p.id).put("kind", p.kind).put("title", p.title).put("backdrop", p.backdrop)
                         .put("meta", p.meta).put("app", p.app == null ? "" : p.app).put("pkg", p.pkg == null ? "" : p.pkg)
+                        .put("deepLink", p.deepLink == null ? "" : p.deepLink)
                         .put("detailed", p.detailed));
             }
             cache.edit().putString("picks", a.toString()).putInt("period", period).putLong("listAt", listAt)
@@ -678,6 +803,7 @@ final class Recs {
             p.meta = o.optString("meta");
             p.app = o.optString("app").isEmpty() ? null : o.optString("app");
             p.pkg = o.optString("pkg").isEmpty() ? null : o.optString("pkg");
+            p.deepLink = o.optString("deepLink").isEmpty() ? null : o.optString("deepLink");
             p.detailed = o.optBoolean("detailed");
             out.add(p);
         }

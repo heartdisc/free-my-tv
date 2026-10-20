@@ -23,6 +23,7 @@ import android.graphics.drawable.AdaptiveIconDrawable;
 import android.graphics.drawable.Drawable;
 import android.media.tv.TvContract;
 import android.media.tv.TvInputInfo;
+import android.net.Uri;
 import android.media.tv.TvInputManager;
 import android.provider.Settings;
 import android.util.DisplayMetrics;
@@ -63,6 +64,7 @@ final class HomeApps {
     static final class Item {
         int kind;
         String key, label, pkg, inputId, number;
+        String deepLink;
         String symbol;      // icon for the shortcuts and special cards
         Bitmap tile;        // 16:9 card (apps and specials)
         Bitmap logo;        // colored logo with no background (shelf); null = use the card
@@ -216,11 +218,16 @@ final class HomeApps {
 
     /** A streaming service's app (the "Watch" button of the featured pick). */
     static Item app(String pkg, String label) {
+        return app(pkg, label, null);
+    }
+
+    static Item app(String pkg, String label, String deepLink) {
         Item it = new Item();
         it.kind = APP;
         it.key = pkg;
         it.pkg = pkg;
         it.label = label;
+        it.deepLink = deepLink;
         return it;
     }
 
@@ -351,6 +358,18 @@ final class HomeApps {
         Intent intent;
         switch (it.kind) {
             case APP:
+                if (it.deepLink != null && !it.deepLink.isEmpty()) {
+                    try {
+                        AppLog.w("Opening deep link: " + it.deepLink + " for " + it.pkg);
+                        Intent deep = new Intent(Intent.ACTION_VIEW, Uri.parse(it.deepLink));
+                        if (it.pkg != null) deep.setPackage(it.pkg);
+                        deep.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                        a.startActivity(deep, ActivityOptions.makeScaleUpAnimation(from, x, y, Math.max(w, 1), Math.max(h, 1)).toBundle());
+                        return true;
+                    } catch (Exception e) {
+                        AppLog.w("Deep link failed (" + e.getMessage() + "), falling back to main intent");
+                    }
+                }
                 intent = launchIntent(a.getPackageManager(), it.pkg);
                 if (intent != null) intent.addFlags(Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED);
                 break;
