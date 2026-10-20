@@ -155,6 +155,12 @@ final class HomeApps {
         List<String> out = new ArrayList<>();
         PackageManager pm = c.getPackageManager();
         for (String[] d : SHELF) if (out.size() < MAX_SHELF && launchIntent(pm, d[2]) != null) out.add(d[2]);
+        if (out.size() < 2) {
+            for (String[] cand : shelfCandidates(c)) {
+                if (out.size() >= MAX_SHELF) break;
+                if (!out.contains(cand[0])) out.add(cand[0]);
+            }
+        }
         return out;
     }
 

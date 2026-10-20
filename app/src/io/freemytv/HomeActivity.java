@@ -71,6 +71,14 @@ public class HomeActivity extends Activity {
         super.onDestroy();
     }
 
+    @Override public void onBackPressed() {
+        if (home != null) {
+            home.back();
+            return;
+        }
+        super.onBackPressed();
+    }
+
     @Override public boolean dispatchKeyEvent(KeyEvent event) {
         if (RemoteKeys.onKey(this, event)) return true;
         if (home != null && home.onKey(event)) return true;
