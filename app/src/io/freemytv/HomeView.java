@@ -297,6 +297,8 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
         ui = a.getSharedPreferences("home-ui", Context.MODE_PRIVATE);
         tvInputs = (TvInputManager) a.getSystemService(Context.TV_INPUT_SERVICE);
         setFocusable(true);
+        setFocusableInTouchMode(true);
+        requestFocus();
         sky = new Layer(a, SKY);
         heroLayer = new Layer(a, HERO);
         status = new Layer(a, STATUS);
