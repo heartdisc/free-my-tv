@@ -543,6 +543,13 @@ final class Recs {
     }
 
     private boolean installed(String pkg) {
+        if (hasApp(pkg)) return true;
+        // When none of the streaming apps are installed yet (e.g. on an emulator), show picks from all services.
+        for (String[] s : SERVICES) if (hasApp(s[2])) return false;
+        return true;
+    }
+
+    private boolean hasApp(String pkg) {
         return HomeApps.launchIntent(context.getPackageManager(), pkg) != null;
     }
 
