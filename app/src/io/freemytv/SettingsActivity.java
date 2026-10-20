@@ -196,19 +196,22 @@ public class SettingsActivity extends Activity {
                 case MAIN: {
                     if (row == 0) {
                         String busyText = state.optString("busy");
-                        String value = busy() ? (busyText.isEmpty() ? Ui.tr("Começando…", "Starting…") : busyText)
-                                : freeActive() ? "Free My TV" : Ui.tr("Original", "Original");
-                        return Ui.tr("Início, ", "Home Screen, ") + value;
+                        String value = busy() ? (busyText.isEmpty() ? Ui.tr("Começando…", "Starting…", "กำลังเริ่ม…") : busyText)
+                                : freeActive() ? "Free My TV" : Ui.tr("Original", "Original", "ดั้งเดิม");
+                        return Ui.tr("Início, ", "Home Screen, ", "หน้าจอหลัก, ") + value;
                     }
-                    String[] names = {Ui.tr("Tela de Descanso, ver agora", "Screensaver, preview"), Ui.tr("Ajustes do Início", "Home Settings"),
-                            Ui.tr("Prateleira", "Shelf"), Ui.tr("Botões do Controle", "Remote Buttons"), Ui.tr("Ajustes da TV", "TV Settings")};
+                    String[] names = {Ui.tr("Tela de Descanso, ver agora", "Screensaver, preview", "สกรีนเซฟเวอร์, ดูตัวอย่าง"),
+                            Ui.tr("Ajustes do Início", "Home Settings", "ตั้งค่าหน้าแรก"),
+                            Ui.tr("Prateleira", "Shelf", "ชั้นวางแอป"),
+                            Ui.tr("Botões do Controle", "Remote Buttons", "ปุ่มรีโมท"),
+                            Ui.tr("Ajustes da TV", "TV Settings", "ตั้งค่าทีวี")};
                     return row - 1 < names.length ? names[row - 1] : "";
                 }
                 case HOME_CHOICE: {
-                    String name = row == 0 ? "Free My TV, " + Ui.tr("sem anúncios, com a tela de descanso nova", "no ads, with the new screensaver")
-                            : "Original, " + Ui.tr("o Início de fábrica da TV", "the TV's factory home screen");
+                    String name = row == 0 ? "Free My TV, " + Ui.tr("sem anúncios, com a tela de descanso nova", "no ads, with the new screensaver", "ไม่มีโฆษณา พร้อมสกรีนเซฟเวอร์ใหม่")
+                            : Ui.tr("Original", "Original", "ดั้งเดิม") + ", " + Ui.tr("o Início de fábrica da TV", "the TV's factory home screen", "หน้าจอหลักจากโรงงานของทีวี");
                     boolean inUse = (row == 0) == freeActive();
-                    return name + (inUse ? Ui.tr(". Em uso", ". In use") : "") + ", " + (row + 1) + Ui.tr(" de 2", " of 2");
+                    return name + (inUse ? Ui.tr(". Em uso", ". In use", " ใช้งานอยู่") : "") + ", " + (row + 1) + Ui.tr(" de 2", " of 2", " จาก 2");
                 }
                 case HOME_SETTINGS:
                 case REMOTE_KEYS: {
@@ -219,16 +222,16 @@ public class SettingsActivity extends Activity {
                 case PICKER: {
                     int at = pickScroll + row;
                     if (at >= pickLabels.size()) return "";
-                    return pickLabels.get(at) + (at == pickCurrent ? Ui.tr(", escolhido", ", selected") : "")
-                            + ", " + (at + 1) + Ui.tr(" de ", " of ") + pickLabels.size();
+                    return pickLabels.get(at) + (at == pickCurrent ? Ui.tr(", escolhido", ", selected", ", เลือกอยู่") : "")
+                            + ", " + (at + 1) + Ui.tr(" de ", " of ", " จาก ") + pickLabels.size();
                 }
                 case SHELF_EDIT: {
                     int at = pickScroll + row;
                     if (at >= shelfRows.size()) return "";
                     String[] app = shelfRows.get(at);
                     int place = shelfOrder.indexOf(app[0]);
-                    return app[1] + ", " + (place >= 0 ? Ui.tr("na prateleira, posição ", "on the shelf, place ") + (place + 1)
-                            : Ui.tr("fora da prateleira", "not on the shelf"));
+                    return app[1] + ", " + (place >= 0 ? Ui.tr("na prateleira, posição ", "on the shelf, place ", "อยู่บนชั้นวาง ลำดับที่ ") + (place + 1)
+                            : Ui.tr("fora da prateleira", "not on the shelf", "ไม่ได้อยู่บนชั้นวาง"));
                 }
                 default:
                     return "";
@@ -347,7 +350,7 @@ public class SettingsActivity extends Activity {
             float cx = 500 * k;
             Symbols.draw(getContext(), c, "sparkles", cx, 400 * k, 150 * k, 0xEBFFFFFF);
             c.drawText("Free My TV", cx, 612 * k, title);
-            c.drawText(Ui.tr("Início e tela de descanso da TV", "Your TV's home screen and screensaver"), cx, 660 * k, subtitle);
+            c.drawText(Ui.tr("Início e tela de descanso da TV", "Your TV's home screen and screensaver", "หน้าจอหลักและสกรีนเซฟเวอร์สำหรับทีวีของคุณ"), cx, 660 * k, subtitle);
             c.drawText(versionName(getContext()), cx, 704 * k, version);
 
             if (screen == MAIN) drawMain(c, seconds); else if (screen == HOME_CHOICE) drawChoice(c); else if (screen == PICKER) drawPicker(c); else if (screen == SHELF_EDIT) drawShelfEditor(c); else drawList(c);
@@ -356,11 +359,11 @@ public class SettingsActivity extends Activity {
         private void drawMain(Canvas c, float seconds) {
             boolean working = busy();
             String busyText = state.optString("busy");
-            String mode = freeActive() ? "Free My TV" : Ui.tr("Original", "Original");
-            String[] labels = {Ui.tr("Início", "Home Screen"), Ui.tr("Tela de Descanso", "Screensaver"),
-                    Ui.tr("Ajustes do Início", "Home Settings"), Ui.tr("Prateleira", "Shelf"),
-                    Ui.tr("Botões do Controle", "Remote Buttons"), Ui.tr("Ajustes da TV", "TV Settings")};
-            String[] values = {working ? "" : mode, Ui.tr("Ver agora", "Preview"), "", "", "", ""};
+            String mode = freeActive() ? "Free My TV" : Ui.tr("Original", "Original", "ดั้งเดิม");
+            String[] labels = {Ui.tr("Início", "Home Screen", "หน้าจอหลัก"), Ui.tr("Tela de Descanso", "Screensaver", "สกรีนเซฟเวอร์"),
+                    Ui.tr("Ajustes do Início", "Home Settings", "ตั้งค่าหน้าแรก"), Ui.tr("Prateleira", "Shelf", "ชั้นวางแอป"),
+                    Ui.tr("Botões do Controle", "Remote Buttons", "ปุ่มรีโมท"), Ui.tr("Ajustes da TV", "TV Settings", "ตั้งค่าทีวี")};
+            String[] values = {working ? "" : mode, Ui.tr("Ver agora", "Preview", "ดูตัวอย่าง"), "", "", "", ""};
             for (int i = 0; i < 6; i++) {
                 float y = (LIST_TOP + i * (ROW_H + ROW_GAP)) * k;
                 rowRect.set(LIST_X * k, y, LIST_R * k, y + ROW_H * k);
@@ -375,7 +378,7 @@ public class SettingsActivity extends Activity {
                     Symbols.draw(getContext(), c, "chevron_right", right - cw / 2, rowRect.centerY(), 22 * k, blend(0x66FFFFFF, 0x991C1C1E, f));
                 } else if (i == 0 && working) {
                     // Switching: the current step in place of the value, with the spinning arc.
-                    String text = busyText.isEmpty() ? Ui.tr("Começando…", "Starting…") : busyText;
+                    String text = busyText.isEmpty() ? Ui.tr("Começando…", "Starting…", "กำลังเริ่ม…") : busyText;
                     rowValue.setColor(blend(0xB3FFFFFF, 0xB31C1C1E, f));
                     String shown = TextUtils.ellipsize(text, new TextPaint(rowValue), 470 * k, TextUtils.TruncateAt.END).toString();
                     c.drawText(shown, right, base, rowValue);
@@ -390,8 +393,8 @@ public class SettingsActivity extends Activity {
 
             float y = (LIST_TOP + 6 * (ROW_H + ROW_GAP) + 20) * k;
             String error = state.optString("error");
-            if (working && (busyText.contains("Permitir") || busyText.contains("Allow"))) {
-                c.drawText(Ui.tr("Na TV: marque “Sempre permitir” e aperte OK.", "On the TV: tick “Always allow” and press OK."),
+            if (working && (busyText.contains("Permitir") || busyText.contains("Allow") || busyText.contains("อนุญาต"))) {
+                c.drawText(Ui.tr("Na TV: marque “Sempre permitir” e aperte OK.", "On the TV: tick “Always allow” and press OK.", "บนทีวี: ติ๊ก “อนุญาตเสมอ” แล้วกด OK"),
                         LIST_X * k + 30 * k, y, warn);
                 y += 46 * k;
             } else if (!working && !error.isEmpty()) {
@@ -406,19 +409,21 @@ public class SettingsActivity extends Activity {
         /** Home screen picks: status, and the credit TMDB asks for. */
         private float drawRecs(Canvas c, float y) {
             float x = LIST_X * k + 30 * k;
-            c.drawText(Ui.tr("RECOMENDAÇÕES", "RECOMMENDATIONS"), x, y, header);
+            c.drawText(Ui.tr("RECOMENDAÇÕES", "RECOMMENDATIONS", "รายการแนะนำ"), x, y, header);
             String line;
             String error = recs.optString("error");
             int count = recs.optInt("count");
-            if (!hasKey) line = Ui.tr("Sem chave do TMDB: veja o README (config.properties).", "No TMDB key: see the README (config.properties).");
-            else if (!error.isEmpty()) line = Ui.tr("Erro: ", "Error: ") + error + ".";
+            if (!hasKey) line = Ui.tr("Sem chave do TMDB: veja o README (config.properties).", "No TMDB key: see the README (config.properties).", "ยังไม่มีคีย์ TMDB: ดูวิธีตั้งค่าใน README (config.properties)");
+            else if (!error.isEmpty()) line = Ui.tr("Erro: ", "Error: ", "ข้อผิดพลาด: ") + error + ".";
             else if (count > 0) line = Ui.tr("Ligadas · " + count + " títulos nos apps da TV, 3 novos a cada hora.",
-                    "On · " + count + " titles from the TV's apps, 3 new ones every hour.");
-            else line = Ui.tr("Buscando os títulos…", "Fetching titles…");
+                    "On · " + count + " titles from the TV's apps, 3 new ones every hour.",
+                    "เปิดอยู่ · " + count + " เรื่องจากแอปในทีวี สุ่มใหม่ 3 เรื่องทุกชั่วโมง");
+            else line = Ui.tr("Buscando os títulos…", "Fetching titles…", "กำลังดึงรายการแนะนำ…");
             c.drawText(TextUtils.ellipsize(line, notice, 790 * k, TextUtils.TruncateAt.END).toString(), x, y + 42 * k, notice);
             version.setTextAlign(Paint.Align.LEFT);
             c.drawText(Ui.tr("Usa a API do TMDB, sem endosso ou certificação do TMDB.",
-                    "This product uses the TMDB API but is not endorsed or certified by TMDB."), x, y + 78 * k, version);
+                    "This product uses the TMDB API but is not endorsed or certified by TMDB.",
+                    "ผลิตภัณฑ์นี้ใช้ API ของ TMDB แต่ไม่ได้รับการรับรองจาก TMDB"), x, y + 78 * k, version);
             version.setTextAlign(Paint.Align.CENTER);
             return y + 78 * k;
         }
@@ -444,16 +449,16 @@ public class SettingsActivity extends Activity {
 
         private float drawComparison(Canvas c, float y) {
             float x = LIST_X * k + 30 * k, colA = LIST_R * k - 220 * k, colB = LIST_R * k - 30 * k;
-            c.drawText(Ui.tr("COMPARAÇÃO", "COMPARISON"), x, y, header);
+            c.drawText(Ui.tr("COMPARAÇÃO", "COMPARISON", "เปรียบเทียบประสิทธิภาพ"), x, y, header);
             cellValue.setColor(0x73FFFFFF);
-            c.drawText("Original", colA, y, cellValue);
+            c.drawText(Ui.tr("Original", "Original", "ดั้งเดิม"), colA, y, cellValue);
             c.drawText("Free My TV", colB, y, cellValue);
             cellValue.setColor(0xD9FFFFFF);
             JSONObject metrics = state.optJSONObject("metrics");
             JSONObject a = metrics == null ? null : metrics.optJSONObject(HomeMode.ORIGINAL);
             JSONObject b = metrics == null ? null : metrics.optJSONObject(HomeMode.FREE);
-            String[][] rows = {{Ui.tr("Botão Início", "Home button"), "homeMs"}, {Ui.tr("Memória livre", "Free memory"), "memAvailableMB"},
-                    {Ui.tr("Memória do Início", "Home screen memory"), "homePssMB"}};
+            String[][] rows = {{Ui.tr("Botão Início", "Home button", "ปุ่มหน้าแรก"), "homeMs"}, {Ui.tr("Memória livre", "Free memory", "หน่วยความจำว่าง"), "memAvailableMB"},
+                    {Ui.tr("Memória do Início", "Home screen memory", "หน่วยความจำหน้าจอหลัก"), "homePssMB"}};
             for (int i = 0; i < rows.length; i++) {
                 float base = y + (46 + 40 * i) * k;
                 c.drawText(rows[i][0], x, base, cellLabel);
@@ -465,7 +470,7 @@ public class SettingsActivity extends Activity {
 
         private void drawNotices(Canvas c, float y) {
             float x = LIST_X * k + 30 * k;
-            c.drawText(Ui.tr("AVISOS", "NOTICES"), x, y, header);
+            c.drawText(Ui.tr("AVISOS", "NOTICES", "การแจ้งเตือน"), x, y, header);
             JSONArray notices = state.optJSONArray("notices");
             int shown = 0;
             for (int i = 0; notices != null && i < notices.length() && shown < 2; i++) {
@@ -475,15 +480,15 @@ public class SettingsActivity extends Activity {
                 c.drawText(TextUtils.ellipsize(line, notice, 790 * k, TextUtils.TruncateAt.END).toString(), x, y + (42 + 38 * shown) * k, notice);
                 shown++;
             }
-            if (shown == 0) c.drawText(Ui.tr("Nenhum ainda.", "None yet."), x, y + 42 * k, notice);
+            if (shown == 0) c.drawText(Ui.tr("Nenhum ainda.", "None yet.", "ยังไม่มีการแจ้งเตือน"), x, y + 42 * k, notice);
         }
 
         /** Home screen choice: Free My TV or the original, with a check on the one in use. */
         private void drawChoice(Canvas c) {
             Paint heading = Ui.text(Ui.displaySemibold, 34 * k, 0xFFFFFFFF);
-            c.drawText(Ui.tr("Início", "Home Screen"), LIST_X * k + 30 * k, (LIST_TOP - 24) * k, heading);
-            String[][] options = {{"Free My TV", Ui.tr("Sem anúncios, com a tela de descanso nova", "No ads, with the new screensaver")},
-                    {"Original", Ui.tr("O Início de fábrica da TV", "The TV's factory home screen")}};
+            c.drawText(Ui.tr("Início", "Home Screen", "หน้าจอหลัก"), LIST_X * k + 30 * k, (LIST_TOP - 24) * k, heading);
+            String[][] options = {{"Free My TV", Ui.tr("Sem anúncios, com a tela de descanso nova", "No ads, with the new screensaver", "ไม่มีโฆษณา พร้อมสกรีนเซฟเวอร์ใหม่")},
+                    {Ui.tr("Original", "Original", "ดั้งเดิม"), Ui.tr("O Início de fábrica da TV", "The TV's factory home screen", "หน้าจอหลักจากโรงงานของทีวี")}};
             int current = freeActive() ? 0 : 1;
             for (int i = 0; i < 2; i++) {
                 float y = (LIST_TOP + 20 + i * (CHOICE_H + ROW_GAP)) * k;
@@ -500,7 +505,8 @@ public class SettingsActivity extends Activity {
             }
             Paint hint = Ui.text(Ui.regular, 23 * k, 0x8CFFFFFF);
             c.drawText(Ui.tr("A troca leva uns segundos e a tela pisca nas medições.",
-                    "Switching takes a few seconds; the screen blinks while it measures."), LIST_X * k + 30 * k,
+                    "Switching takes a few seconds; the screen blinks while it measures.",
+                    "การสลับใช้เวลาไม่กี่วินาที หน้าจออาจกะพริบขณะวัดผล"), LIST_X * k + 30 * k,
                     (LIST_TOP + 20 + 2 * (CHOICE_H + ROW_GAP) + 40) * k, hint);
         }
 
@@ -515,16 +521,16 @@ public class SettingsActivity extends Activity {
             if (m == null || !m.has(key)) return "—";
             long v = m.optLong(key);
             if (key.equals("homeMs")) return v + " ms";
-            if (key.equals("memAvailableMB") && v >= 1024) return String.format(Ui.en ? java.util.Locale.US : Ui.PT, "%.2f GB", v / 1024.0);
+            if (key.equals("memAvailableMB") && v >= 1024) return String.format(Ui.en || Ui.th ? java.util.Locale.US : Ui.PT, "%.2f GB", v / 1024.0);
             return v + " MB";
         }
 
         private static String ago(long at) {
             long minutes = Math.max(0, (System.currentTimeMillis() - at) / 60_000);
-            if (minutes < 1) return Ui.tr("agora", "now");
-            if (minutes < 60) return Ui.tr("há " + minutes + " min", minutes + " min ago");
-            if (minutes < 48 * 60) return Ui.tr("há " + (minutes / 60) + " h", (minutes / 60) + " h ago");
-            return Ui.tr("há " + (minutes / 1440) + " dias", (minutes / 1440) + " days ago");
+            if (minutes < 1) return Ui.tr("agora", "now", "เมื่อสักครู่");
+            if (minutes < 60) return Ui.tr("há " + minutes + " min", minutes + " min ago", minutes + " นาทีที่แล้ว");
+            if (minutes < 48 * 60) return Ui.tr("há " + (minutes / 60) + " h", (minutes / 60) + " h ago", (minutes / 60) + " ชม. ที่แล้ว");
+            return Ui.tr("há " + (minutes / 1440) + " dias", (minutes / 1440) + " days ago", (minutes / 1440) + " วันที่แล้ว");
         }
 
         private static String versionName(Context c) {
@@ -596,7 +602,7 @@ public class SettingsActivity extends Activity {
 
         // MARK: - Home Settings and Remote Buttons
 
-        private static final String[] LANGUAGES = {"auto", "pt", "en"}, UNITS = {"auto", "C", "F"}, THEMES = {"auto", "light", "dark"};
+        private static final String[] LANGUAGES = {"auto", "th", "en", "pt"}, UNITS = {"auto", "C", "F"}, THEMES = {"auto", "light", "dark"};
         /** Home Settings: language, temperature, theme, weather, quotes, then one row per coin. */
         private static final int COIN_ROWS = 5;
 
@@ -606,15 +612,15 @@ public class SettingsActivity extends Activity {
 
         private String[] settingLabels() {
             List<String> l = new ArrayList<>();
-            l.add(Ui.tr("Idioma", "Language"));
-            l.add(Ui.tr("Temperatura", "Temperature"));
-            l.add(Ui.tr("Tema", "Theme"));
-            l.add(Ui.tr("Widget do clima", "Weather widget"));
-            l.add(Ui.tr("Widget de cotações", "Quotes widget"));
+            l.add(Ui.tr("Idioma", "Language", "ภาษา"));
+            l.add(Ui.tr("Temperatura", "Temperature", "อุณหภูมิ"));
+            l.add(Ui.tr("Tema", "Theme", "ธีม"));
+            l.add(Ui.tr("Widget do clima", "Weather widget", "วิดเจ็ตสภาพอากาศ"));
+            l.add(Ui.tr("Widget de cotações", "Quotes widget", "วิดเจ็ตราคาคริปโต"));
             l.add("Bitcoin");
             l.add("Ethereum");
             l.add("Solana");
-            if (dollar()) l.add(Ui.tr("Dólar", "Dollar"));
+            if (dollar()) l.add(Ui.tr("Dólar", "Dollar", "ดอลลาร์"));
             return l.toArray(new String[0]);
         }
 
@@ -622,11 +628,11 @@ public class SettingsActivity extends Activity {
             String[] labels = settingLabels();
             String[] v = new String[labels.length];
             String lang = Prefs.language();
-            v[0] = lang.equals("pt") ? "Português" : lang.equals("en") ? "English" : Ui.tr("Automático", "Automatic");
+            v[0] = lang.equals("th") ? "ไทย" : lang.equals("pt") ? "Português" : lang.equals("en") ? "English" : Ui.tr("Automático", "Automatic", "อัตโนมัติ");
             String unit = Prefs.temperature();
-            v[1] = unit.equals("C") ? "°C" : unit.equals("F") ? "°F" : Ui.tr("Automática", "Automatic");
+            v[1] = unit.equals("C") ? "°C" : unit.equals("F") ? "°F" : Ui.tr("Automática", "Automatic", "อัตโนมัติ");
             String theme = Prefs.theme();
-            v[2] = theme.equals("light") ? Ui.tr("Claro", "Light") : theme.equals("dark") ? Ui.tr("Escuro", "Dark") : Ui.tr("Automático", "Automatic");
+            v[2] = theme.equals("light") ? Ui.tr("Claro", "Light", "สว่าง") : theme.equals("dark") ? Ui.tr("Escuro", "Dark", "มืด") : Ui.tr("Automático", "Automatic", "อัตโนมัติ");
             v[3] = onOff(Prefs.weather());
             v[4] = onOff(Prefs.quotes());
             // No quotes widget, nowhere to show prices: the coins read as off (and stay locked) until it is back on.
@@ -635,19 +641,19 @@ public class SettingsActivity extends Activity {
         }
 
         private static String onOff(boolean on) {
-            return on ? Ui.tr("Ligado", "On") : Ui.tr("Desligado", "Off");
+            return on ? Ui.tr("Ligado", "On", "เปิด") : Ui.tr("Desligado", "Off", "ปิด");
         }
 
         private String[] keyLabels() {
-            return new String[] {Ui.tr("Botão Netflix", "Netflix button"), Ui.tr("Botão YouTube", "YouTube button"),
-                    Ui.tr("Botão Prime Video", "Prime Video button"), Ui.tr("Botão TCL Channel", "TCL Channel button")};
+            return new String[] {Ui.tr("Botão Netflix", "Netflix button", "ปุ่ม Netflix"), Ui.tr("Botão YouTube", "YouTube button", "ปุ่ม YouTube"),
+                    Ui.tr("Botão Prime Video", "Prime Video button", "ปุ่ม Prime Video"), Ui.tr("Botão TCL Channel", "TCL Channel button", "ปุ่ม TCL Channel")};
         }
 
         private String[] keyValues() {
             String[] v = new String[Prefs.KEYS.length];
             for (int i = 0; i < v.length; i++) {
                 int at = appPkgs.indexOf(Prefs.keyApp(Prefs.KEYS[i]));
-                v[i] = at >= 0 ? appLabels.get(at) : Ui.tr("Não instalado", "Not installed");
+                v[i] = at >= 0 ? appLabels.get(at) : Ui.tr("Não instalado", "Not installed", "ไม่ได้ติดตั้ง");
             }
             return v;
         }
@@ -667,7 +673,7 @@ public class SettingsActivity extends Activity {
             appPkgs.clear();
             appLabels.clear();
             appPkgs.add("");
-            appLabels.add(Ui.tr("Nada", "Nothing"));
+            appLabels.add(Ui.tr("Nada", "Nothing", "ไม่ทำอะไร"));
             for (String[] f : found) {
                 appPkgs.add(f[0]);
                 appLabels.add(f[1]);
@@ -773,7 +779,7 @@ public class SettingsActivity extends Activity {
 
         private void drawShelfEditor(Canvas c) {
             Paint heading = Ui.text(Ui.displaySemibold, 34 * k, 0xFFFFFFFF);
-            c.drawText(Ui.tr("Prateleira", "Shelf"), LIST_X * k + 30 * k, (LIST_TOP - 24) * k, heading);
+            c.drawText(Ui.tr("Prateleira", "Shelf", "ชั้นวางแอป"), LIST_X * k + 30 * k, (LIST_TOP - 24) * k, heading);
             int rows = rowCount();
             for (int i = 0; i < rows; i++) {
                 String[] app = shelfRows.get(pickScroll + i);
@@ -785,12 +791,13 @@ public class SettingsActivity extends Activity {
                 rowValue.setColor(blend(0xB3FFFFFF, 0xB31C1C1E, f));
                 float base = rowRect.centerY() + Ui.halfCap(rowLabel);
                 c.drawText(TextUtils.ellipsize(app[1], new TextPaint(rowLabel), 520 * k, TextUtils.TruncateAt.END).toString(), rowRect.left + 30 * k, base, rowLabel);
-                c.drawText(place >= 0 ? "#" + (place + 1) : Ui.tr("Fora", "Off"), rowRect.right - 30 * k, base, rowValue);
+                c.drawText(place >= 0 ? "#" + (place + 1) : Ui.tr("Fora", "Off", "ปิด"), rowRect.right - 30 * k, base, rowValue);
             }
             Paint hint = Ui.text(Ui.regular, 23 * k, 0x8CFFFFFF);
             float hy = (LIST_TOP + 20 + rows * (LIST_ROW_H + LIST_ROW_GAP) + 36) * k;
             c.drawText(Ui.tr("OK põe ou tira da prateleira (até " + HomeApps.MAX_SHELF + "). ← → mudam a ordem.",
-                    "OK adds or removes (up to " + HomeApps.MAX_SHELF + "). ← → change the order."), LIST_X * k + 30 * k, hy, hint);
+                    "OK adds or removes (up to " + HomeApps.MAX_SHELF + "). ← → change the order.",
+                    "กด OK เพื่อเพิ่มหรือเอาออก (สูงสุด " + HomeApps.MAX_SHELF + " แอป) กด ← → เพื่อสลับลำดับ"), LIST_X * k + 30 * k, hy, hint);
         }
 
         private void openPicker(int which) {
@@ -825,7 +832,7 @@ public class SettingsActivity extends Activity {
             }
             Paint hint = Ui.text(Ui.regular, 23 * k, 0x8CFFFFFF);
             float hy = (LIST_TOP + 20 + rows * (LIST_ROW_H + LIST_ROW_GAP) + 36) * k;
-            c.drawText((pickScroll + focus + 1) + " / " + pickLabels.size() + "  ·  " + Ui.tr("OK escolhe, Voltar cancela.", "OK picks, Back cancels."),
+            c.drawText((pickScroll + focus + 1) + " / " + pickLabels.size() + "  ·  " + Ui.tr("OK escolhe, Voltar cancela.", "OK picks, Back cancels.", "กด OK เพื่อเลือก, กดย้อนกลับเพื่อยกเลิก"),
                     LIST_X * k + 30 * k, hy, hint);
         }
 
@@ -834,7 +841,7 @@ public class SettingsActivity extends Activity {
             String[] labels = keys ? keyLabels() : settingLabels();
             String[] values = keys ? keyValues() : settingValues();
             Paint heading = Ui.text(Ui.displaySemibold, 34 * k, 0xFFFFFFFF);
-            c.drawText(keys ? Ui.tr("Botões do Controle", "Remote Buttons") : Ui.tr("Ajustes do Início", "Home Settings"),
+            c.drawText(keys ? Ui.tr("Botões do Controle", "Remote Buttons", "ปุ่มรีโมท") : Ui.tr("Ajustes do Início", "Home Settings", "ตั้งค่าหน้าแรก"),
                     LIST_X * k + 30 * k, (LIST_TOP - 24) * k, heading);
             for (int i = 0; i < labels.length; i++) {
                 float y = (LIST_TOP + 20 + i * (LIST_ROW_H + LIST_ROW_GAP)) * k;
@@ -850,12 +857,14 @@ public class SettingsActivity extends Activity {
             }
             Paint hint = Ui.text(Ui.regular, 23 * k, 0x8CFFFFFF);
             float hy = (LIST_TOP + 20 + labels.length * (LIST_ROW_H + LIST_ROW_GAP) + 36) * k;
-            c.drawText(Ui.tr("OK ou as setas mudam o valor.", "OK or the arrows change the value."), LIST_X * k + 30 * k, hy, hint);
+            c.drawText(Ui.tr("OK ou as setas mudam o valor.", "OK or the arrows change the value.", "กด OK หรือปุ่มลูกศรซ้าย/ขวาเพื่อเปลี่ยนค่า"), LIST_X * k + 30 * k, hy, hint);
             if (keys) {
                 c.drawText(RemoteKeys.supported() ? Ui.tr("Disney e Globoplay: a própria TV controla esses botões.",
-                        "Disney and Globoplay: the TV itself controls those buttons.")
+                        "Disney and Globoplay: the TV itself controls those buttons.",
+                        "Disney และ Globoplay: ระบบของทีวีควบคุมปุ่มเหล่านี้โดยตรง")
                         : Ui.tr("Esses são os botões do controle da TCL: nesta TV, os botões funcionam como sempre.",
-                        "These are the TCL remote's buttons: on this TV, the buttons work as they always did."), LIST_X * k + 30 * k, hy + 38 * k, hint);
+                        "These are the TCL remote's buttons: on this TV, the buttons work as they always did.",
+                        "สำหรับปุ่มลัดบนรีโมท TCL: บนทีวีเครื่องนี้ปุ่มต่างๆ จะทำงานตามปกติ"), LIST_X * k + 30 * k, hy + 38 * k, hint);
             }
         }
 

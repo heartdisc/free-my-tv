@@ -43,14 +43,14 @@ final class Prefs {
 
     // MARK: - Language and units
 
-    /** "auto", "pt" or "en". */
+    /** "auto", "th", "pt" or "en". */
     static String language() {
         String v = app == null ? Config.LANGUAGE : sp().getString("language", Config.LANGUAGE);
         v = v.trim().toLowerCase(Locale.ROOT);
-        return v.startsWith("pt") ? "pt" : v.startsWith("en") ? "en" : "auto";
+        return v.startsWith("th") ? "th" : v.startsWith("pt") ? "pt" : v.startsWith("en") ? "en" : "auto";
     }
 
-    static void setLanguage(String v) { put("language", v); Ui.en = Ui.english(); }
+    static void setLanguage(String v) { put("language", v); Ui.en = Ui.english(); Ui.th = Ui.thai(); }
 
     /** "auto", "C" or "F". */
     static String temperature() {

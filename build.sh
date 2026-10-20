@@ -36,8 +36,8 @@ number() {
   [[ "$v" =~ ^-?[0-9]+(\.[0-9]+)?$ ]] || { echo "config.properties: $1 must be a number (got \"$v\")" >&2; exit 1; }
   printf '%s' "$v"
 }
-LAT="$(number latitude 40.7128)"
-LON="$(number longitude -74.0060)"
+LAT="$(number latitude 13.7563)"
+LON="$(number longitude 100.5018)"
 ASSIST=false; [ "$(prop disable_assistant false)" = "true" ] && ASSIST=true
 CRYPTO=false; [ "$(prop show_crypto true)" = "true" ] && CRYPTO=true
 
@@ -50,13 +50,13 @@ final class Config {
     private Config() {}
 
     static final String TMDB_KEY = "$(prop tmdb_key '')";
-    static final String TMDB_REGION = "$(prop tmdb_region US)";
+    static final String TMDB_REGION = "$(prop tmdb_region TH)";
     static final String LATITUDE = "$LAT";
     static final String LONGITUDE = "$LON";
-    static final String CITY = "$(prop city '')";
-    static final String LANGUAGE = "$(prop language auto)";
+    static final String CITY = "$(prop city 'กรุงเทพฯ')";
+    static final String LANGUAGE = "$(prop language th)";
     static final String CURRENCY = "$(prop currency USD)";
-    static final String TEMPERATURE = "$(prop temperature auto)";
+    static final String TEMPERATURE = "$(prop temperature C)";
     static final boolean DISABLE_ASSISTANT = $ASSIST;
     static final boolean SHOW_CRYPTO = $CRYPTO;
 }

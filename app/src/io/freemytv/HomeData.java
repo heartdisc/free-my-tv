@@ -77,7 +77,7 @@ final class HomeData {
     }
 
     static String coinName(int i) {
-        return i == 3 ? Ui.tr("Dólar", "Dollar") : COIN_NAMES[i];
+        return i == 3 ? Ui.tr("Dólar", "Dollar", "ดอลลาร์") : COIN_NAMES[i];
     }
 
     private static String pricesUrl() {
@@ -273,7 +273,7 @@ final class HomeData {
     // MARK: - Formatting
 
     private static Locale locale() {
-        return Ui.en ? Locale.US : PT;
+        return Ui.en || Ui.th ? Locale.US : PT;
     }
 
     /** 580.4k · 21.0k · 1.04k · 5.61 (as short as possible; the dollar always with cents). */
@@ -303,6 +303,18 @@ final class HomeData {
     /** The weather in words, from Open-Meteo's WMO code. */
     static String condition(int code, boolean day) {
         if (code < 0) return "";
+        if (Ui.th) {
+            if (code == 0) return day ? "ท้องฟ้าแจ่มใส" : "ท้องฟ้าโปร่ง";
+            if (code == 1) return day ? "แดดจัดเป็นส่วนใหญ่" : "ท้องฟ้าโปร่งเป็นส่วนใหญ่";
+            if (code == 2) return "มีเมฆบางส่วน";
+            if (code == 3) return "มีเมฆมาก";
+            if (code == 45 || code == 48) return "มีหมอก";
+            if (code >= 51 && code <= 57) return "ฝนปรอยๆ";
+            if (code == 65 || code == 67 || code == 82) return "ฝนตกหนัก";
+            if (code >= 71 && code <= 77 || code == 85 || code == 86) return "หิมะตก";
+            if (code >= 95) return "พายุฝนฟ้าคะนอง";
+            return "ฝนตก";
+        }
         if (Ui.en) {
             if (code == 0) return "Clear";
             if (code == 1) return day ? "Mostly Sunny" : "Mostly Clear";
@@ -330,6 +342,7 @@ final class HomeData {
     private static String currencySymbol() {
         switch (CURRENCY) {
             case "USD": return "$";
+            case "THB": return "฿";
             case "BRL": return "R$ ";
             case "EUR": return "€";
             case "GBP": return "£";
@@ -358,6 +371,7 @@ final class HomeData {
     }
 
     static String hour(long at) {
+        if (Ui.th) return new SimpleDateFormat("HH:00", Locale.US).format(new java.util.Date(at));
         return Ui.en ? new SimpleDateFormat("h a", Locale.US).format(new java.util.Date(at))
                 : new SimpleDateFormat("HH'h'", PT).format(new java.util.Date(at));
     }
@@ -368,6 +382,7 @@ final class HomeData {
         long age = System.currentTimeMillis() - at;
         if (age < every * 2) return "";
         long minutes = age / 60_000;
+        if (Ui.th) return minutes < 60 ? minutes + " นาทีที่แล้ว" : (minutes / 60) + " ชม. ที่แล้ว";
         if (Ui.en) return minutes < 60 ? minutes + " min ago" : (minutes / 60) + " h ago";
         return minutes < 60 ? "há " + minutes + " min" : "há " + (minutes / 60) + " h";
     }
