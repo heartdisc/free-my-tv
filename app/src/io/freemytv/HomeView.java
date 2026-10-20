@@ -1716,21 +1716,14 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
     }
 
     /**
-     * Like the Apple TV: Back on the home screen (with nothing left to close) starts the screensaver right away, through
-     * the system's own launcher for it (it runs whichever screensaver is chosen, ours by default).
+     * Like the Apple TV: Back on the home screen (with nothing left to close) starts the screensaver right away.
      */
     static void startScreensaver(Context c) {
         try {
-            c.startActivity(new Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_DESK_DOCK)
-                    .setClassName("com.android.systemui", "com.android.systemui.Somnambulator")
+            c.startActivity(new Intent(c, ScreensaverActivity.class)
                     .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
         } catch (Exception e) {
-            try {
-                c.startActivity(new Intent(Intent.ACTION_MAIN)
-                        .setComponent(new ComponentName(c, Screensaver.class))
-                        .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
-            } catch (Exception ignored) {
-            }
+            AppLog.w("screensaver: " + e.getMessage());
         }
     }
 
