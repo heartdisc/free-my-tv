@@ -391,11 +391,24 @@ final class HomeApps {
         Intent intent;
         switch (it.kind) {
             case APP:
-                intent = it.uri == null ? null : new Intent(Intent.ACTION_VIEW, Uri.parse(it.uri))
-                        .addCategory(Intent.CATEGORY_BROWSABLE).setPackage(it.pkg);
-                if (intent != null && intent.resolveActivity(a.getPackageManager()) == null) intent = null;
-                if (intent == null) intent = launchIntent(a.getPackageManager(), it.pkg);
-                if (intent != null) intent.addFlags(Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED);
+                if (it.uri != null) {
+                    intent = new Intent(Intent.ACTION_VIEW, Uri.parse(it.uri)).setPackage(it.pkg);
+                    if ("com.netflix.ninja".equals(it.pkg)) {
+                        intent.putExtra("source", "30");
+                        intent.setComponent(new ComponentName("com.netflix.ninja", "com.netflix.ninja.MainActivity"));
+                    }
+                    if (intent.resolveActivity(a.getPackageManager()) == null) {
+                        intent = null;
+                    } else {
+                        intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+                    }
+                } else {
+                    intent = null;
+                }
+                if (intent == null) {
+                    intent = launchIntent(a.getPackageManager(), it.pkg);
+                    if (intent != null) intent.addFlags(Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED);
+                }
                 break;
             case LIVE_TV:
                 intent = liveTv(a);
