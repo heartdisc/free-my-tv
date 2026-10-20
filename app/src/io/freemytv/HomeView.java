@@ -1520,6 +1520,7 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
         sheetOpen = false;
         sheet.target = 0;
         retarget(false);
+        reload();
     }
 
     private void retargetGrid(boolean snap) {
@@ -1788,10 +1789,11 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
             HomeApps.Item it = others.get(gridIndex);
             if (HomeApps.addToShelf(getContext(), it.pkg)) {
                 showToast(String.format(Ui.tr("%s está no Início", "%s added to home shelf", "%s เพิ่มไปที่หน้าหลักแล้ว"), it.label));
+                setOthers(HomeApps.others(getContext()));
                 reload();
                 return true;
             } else {
-                showToast(Ui.tr("O Início está cheio", "Home shelf is full", "หน้าหลักเต็มแล้ว (สูงสุด 9 แอป)"));
+                showToast(Ui.tr("O Início está cheio", "Home shelf is full", "หน้าหลักเต็มแล้ว (สูงสุด 8 แอป)"));
                 return false;
             }
         }

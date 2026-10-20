@@ -177,10 +177,19 @@ final class HomeApps {
 
     /** The shelf's packages in order: the user's list (Settings > Shelf), or the built-in one. */
     static List<String> shelfPackages(Context c) {
-        List<String> custom = Prefs.shelf();
-        if (custom != null) return custom;
-        List<String> out = new ArrayList<>();
         PackageManager pm = c.getPackageManager();
+        List<String> custom = Prefs.shelf();
+        if (custom != null) {
+            List<String> valid = new ArrayList<>();
+            for (String pkg : custom) {
+                if (launchIntent(pm, pkg) != null) valid.add(pkg);
+            }
+            if (valid.size() != custom.size()) {
+                Prefs.setShelf(valid);
+            }
+            return valid;
+        }
+        List<String> out = new ArrayList<>();
         for (String[] d : SHELF) if (out.size() < MAX_SHELF && launchIntent(pm, d[2]) != null) out.add(d[2]);
         if (out.size() < 2) {
             for (String[] cand : shelfCandidates(c)) {
