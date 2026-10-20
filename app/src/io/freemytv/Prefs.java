@@ -26,6 +26,7 @@ final class Prefs {
     static void init(Context c) {
         app = c.getApplicationContext();
         Ui.applyLanguage();   // the language picked on the TV, now that it can be read
+        Ui.init(app);
     }
 
     private static SharedPreferences sp() {
@@ -52,6 +53,28 @@ final class Prefs {
     }
 
     static void setLanguage(String v) { put("language", v); Ui.applyLanguage(); }
+
+    /** "google", "anuphan", "noto", "ibm", "lineseed" or "inter". */
+    static String font() {
+        String v = app == null ? "google" : sp().getString("font", "google");
+        v = v.trim().toLowerCase(Locale.ROOT);
+        switch (v) {
+            case "google":
+            case "anuphan":
+            case "noto":
+            case "ibm":
+            case "lineseed":
+            case "inter":
+                return v;
+            default:
+                return "google";
+        }
+    }
+
+    static void setFont(String v) {
+        put("font", v);
+        if (app != null) Ui.init(app);
+    }
 
     /** "auto", "C" or "F". */
     static String temperature() {

@@ -286,6 +286,19 @@ public class SettingsActivity extends Activity {
             h = height;
             k = w / 1920f;
             scene.setSize(w, h);
+            makePaints();
+            spinner = new Paint(Paint.ANTI_ALIAS_FLAG);
+            spinner.setStyle(Paint.Style.STROKE);
+            spinner.setStrokeCap(Paint.Cap.ROUND);
+            spinner.setStrokeWidth(3.5f * k);
+            white = new Paint(Paint.ANTI_ALIAS_FLAG);
+            white.setColor(0xFFF5F5F7);
+            shadow = new Paint(Paint.ANTI_ALIAS_FLAG);
+            shadow.setMaskFilter(new BlurMaskFilter(22 * k, BlurMaskFilter.Blur.NORMAL));
+        }
+
+        private void makePaints() {
+            if (w == 0) return;
             title = Ui.text(Ui.displaySemibold, 50 * k, 0xFFFFFFFF);
             title.setTextAlign(Paint.Align.CENTER);
             subtitle = Ui.text(Ui.regular, 26 * k, 0x99FFFFFF);
@@ -303,14 +316,6 @@ public class SettingsActivity extends Activity {
             cellValue.setTextAlign(Paint.Align.RIGHT);
             warn = Ui.text(Ui.regular, 23 * k, AMBER);
             notice = new TextPaint(Ui.text(Ui.regular, 23 * k, 0xB3FFFFFF));
-            spinner = new Paint(Paint.ANTI_ALIAS_FLAG);
-            spinner.setStyle(Paint.Style.STROKE);
-            spinner.setStrokeCap(Paint.Cap.ROUND);
-            spinner.setStrokeWidth(3.5f * k);
-            white = new Paint(Paint.ANTI_ALIAS_FLAG);
-            white.setColor(0xFFF5F5F7);
-            shadow = new Paint(Paint.ANTI_ALIAS_FLAG);
-            shadow.setMaskFilter(new BlurMaskFilter(22 * k, BlurMaskFilter.Blur.NORMAL));
         }
 
         private boolean busy() {
@@ -615,9 +620,11 @@ public class SettingsActivity extends Activity {
 
         // MARK: - Home Settings and Remote Buttons
 
-        private static final String[] LANGUAGES = {"auto", "th", "en", "es", "pt"}, UNITS = {"auto", "C", "F"}, THEMES = {"auto", "light", "dark"};
-        /** Home Settings: language, temperature, theme, weather, quotes, then one row per coin. */
-        private static final int COIN_ROWS = 5;
+        private static final String[] LANGUAGES = {"auto", "th", "en", "es", "pt"},
+                FONTS = {"google", "anuphan", "noto", "ibm", "lineseed", "inter"},
+                UNITS = {"auto", "C", "F"}, THEMES = {"auto", "light", "dark"};
+        /** Home Settings: language, font, temperature, theme, weather, quotes, then one row per coin. */
+        private static final int COIN_ROWS = 6;
 
         private boolean dollar() {
             return "BRL".equalsIgnoreCase(Config.CURRENCY.trim());
@@ -626,6 +633,7 @@ public class SettingsActivity extends Activity {
         private String[] settingLabels() {
             List<String> l = new ArrayList<>();
             l.add(Ui.tr("Idioma", "Language", "ภาษา"));
+            l.add(Ui.tr("Fonte", "Font", "ฟอนต์"));
             l.add(Ui.tr("Temperatura", "Temperature", "อุณหภูมิ"));
             l.add(Ui.tr("Tema", "Theme", "ธีม"));
             l.add(Ui.tr("Widget do clima", "Weather widget", "วิดเจ็ตสภาพอากาศ"));
@@ -637,17 +645,29 @@ public class SettingsActivity extends Activity {
             return l.toArray(new String[0]);
         }
 
+        private static String fontName(String f) {
+            switch (f) {
+                case "google": return "Google Sans";
+                case "anuphan": return "Anuphan";
+                case "noto": return "Noto Sans Thai";
+                case "ibm": return "IBM Plex Sans Thai";
+                case "lineseed": return "LINE Seed Sans TH";
+                default: return "Inter";
+            }
+        }
+
         private String[] settingValues() {
             String[] labels = settingLabels();
             String[] v = new String[labels.length];
             String lang = Prefs.language();
             v[0] = lang.equals("th") ? "ไทย" : lang.equals("pt") ? "Português" : lang.equals("en") ? "English" : lang.equals("es") ? "Español" : Ui.tr("Automático", "Automatic", "อัตโนมัติ");
+            v[1] = fontName(Prefs.font());
             String unit = Prefs.temperature();
-            v[1] = unit.equals("C") ? "°C" : unit.equals("F") ? "°F" : Ui.tr("Automática", "Automatic", "อัตโนมัติ");
+            v[2] = unit.equals("C") ? "°C" : unit.equals("F") ? "°F" : Ui.tr("Automática", "Automatic", "อัตโนมัติ");
             String theme = Prefs.theme();
-            v[2] = theme.equals("light") ? Ui.tr("Claro", "Light", "สว่าง") : theme.equals("dark") ? Ui.tr("Escuro", "Dark", "มืด") : Ui.tr("Automático", "Automatic", "อัตโนมัติ");
-            v[3] = onOff(Prefs.weather());
-            v[4] = onOff(Prefs.quotes());
+            v[3] = theme.equals("light") ? Ui.tr("Claro", "Light", "สว่าง") : theme.equals("dark") ? Ui.tr("Escuro", "Dark", "มืด") : Ui.tr("Automático", "Automatic", "อัตโนมัติ");
+            v[4] = onOff(Prefs.weather());
+            v[5] = onOff(Prefs.quotes());
             // No quotes widget, nowhere to show prices: the coins read as off (and stay locked) until it is back on.
             for (int i = COIN_ROWS; i < v.length; i++) v[i] = onOff(Prefs.quotes() && Prefs.coin(i - COIN_ROWS));
             return v;
@@ -706,20 +726,28 @@ public class SettingsActivity extends Activity {
                 case 0: {
                     int at = java.util.Arrays.asList(LANGUAGES).indexOf(Prefs.language());
                     Prefs.setLanguage(LANGUAGES[(at + dir + LANGUAGES.length) % LANGUAGES.length]);
+                    errorLayout = null;
                     break;
                 }
                 case 1: {
+                    int at = java.util.Arrays.asList(FONTS).indexOf(Prefs.font());
+                    Prefs.setFont(FONTS[(at + dir + FONTS.length) % FONTS.length]);
+                    makePaints();
+                    errorLayout = null;
+                    break;
+                }
+                case 2: {
                     int at = java.util.Arrays.asList(UNITS).indexOf(Prefs.temperature());
                     Prefs.setTemperature(UNITS[(at + dir + UNITS.length) % UNITS.length]);
                     break;
                 }
-                case 2: {
+                case 3: {
                     int at = java.util.Arrays.asList(THEMES).indexOf(Prefs.theme());
                     Prefs.setTheme(THEMES[(at + dir + THEMES.length) % THEMES.length]);
                     break;
                 }
-                case 3: Prefs.setWeather(!Prefs.weather()); break;
-                case 4: Prefs.setQuotes(!Prefs.quotes()); break;
+                case 4: Prefs.setWeather(!Prefs.weather()); break;
+                case 5: Prefs.setQuotes(!Prefs.quotes()); break;
                 default:
                     if (!Prefs.quotes()) return;
                     Prefs.setCoin(focus - COIN_ROWS, !Prefs.coin(focus - COIN_ROWS));

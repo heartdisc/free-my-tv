@@ -28,29 +28,63 @@ final class Ui {
     static volatile String language = language();
     static volatile boolean en = "en".equals(language), es = "es".equals(language), th = "th".equals(language);
     static Typeface thin, light, displayMedium, displaySemibold, regular, medium, semibold;
-    private static boolean loaded;
+    private static String loadedFont;
     private static final Rect BOUNDS = new Rect();
     private static final RectF OVAL = new RectF();
 
     static synchronized void init(Context c) {
-        if (loaded) return;
-        loaded = true;
+        String want = Prefs.font();
+        if (want.equals(loadedFont)) return;
+        loadedFont = want;
         AssetManager a = c.getAssets();
-        thin = font(a, 32, 200);
-        light = font(a, 32, 300);
-        displayMedium = font(a, 32, 500);
-        displaySemibold = font(a, 32, 600);
-        regular = font(a, 14, 400);
-        medium = font(a, 14, 500);
-        semibold = font(a, 14, 600);
+        thin = font(a, want, 32, 200);
+        light = font(a, want, 32, 300);
+        displayMedium = font(a, want, 32, 500);
+        displaySemibold = font(a, want, 32, 600);
+        regular = font(a, want, 14, 400);
+        medium = font(a, want, 14, 500);
+        semibold = font(a, want, 14, 600);
     }
 
-    /** Inter at an optical size (14 = text, 32 = display) and weight; the system font if the file is missing. */
-    private static Typeface font(AssetManager a, int opticalSize, int weight) {
-        if (has(a, FONT)) {
+    /** Chosen font family at an optical size (14 = text, 32 = display) and weight; the system font if missing. */
+    private static Typeface font(AssetManager a, String choice, int opticalSize, int weight) {
+        String path;
+        String variation = null;
+        switch (choice) {
+            case "google":
+                path = "fonts/GoogleSansVariable.ttf";
+                variation = "'opsz' " + (opticalSize >= 24 ? 18 : 17) + ", 'wght' " + weight;
+                break;
+            case "anuphan":
+                path = "fonts/AnuphanVariable.ttf";
+                variation = "'wght' " + weight;
+                break;
+            case "noto":
+                path = "fonts/NotoSansThaiVariable.ttf";
+                variation = "'wght' " + weight;
+                break;
+            case "ibm":
+                path = weight <= 200 ? "fonts/IBMPlexSansThai-Thin.ttf"
+                        : weight == 300 ? "fonts/IBMPlexSansThai-Light.ttf"
+                        : weight == 400 ? "fonts/IBMPlexSansThai-Regular.ttf"
+                        : weight == 500 ? "fonts/IBMPlexSansThai-Medium.ttf"
+                        : "fonts/IBMPlexSansThai-SemiBold.ttf";
+                break;
+            case "lineseed":
+                path = weight <= 300 ? "fonts/LINESeedSansTH_A_Th.ttf"
+                        : weight <= 500 ? "fonts/LINESeedSansTH_A_Rg.ttf"
+                        : "fonts/LINESeedSansTH_A_Bd.ttf";
+                break;
+            default:
+                path = FONT;
+                variation = "'opsz' " + opticalSize + ", 'wght' " + weight;
+                break;
+        }
+        if (has(a, path)) {
             try {
-                Typeface t = new Typeface.Builder(a, FONT)
-                        .setFontVariationSettings("'opsz' " + opticalSize + ", 'wght' " + weight).build();
+                Typeface.Builder b = new Typeface.Builder(a, path);
+                if (variation != null) b.setFontVariationSettings(variation);
+                Typeface t = b.build();
                 if (t != null) return t;
             } catch (RuntimeException ignored) {
             }

@@ -81,6 +81,7 @@ final class Spanish {
             case "Free My TV's home screen ran into a problem.\nGoing back to the TV's original home screen…": return "La pantalla de inicio de Free My TV tuvo un problema.\nVolviendo a la pantalla original del TV…";
             // Home Settings, Shelf and Remote Buttons (#15, #16, #17)
             case "Language": return "Idioma";
+            case "Font": return "Fuente";
             case "Temperature": return "Temperatura";
             case "Theme": return "Tema";
             case "Automatic": return "Automático";
