@@ -63,8 +63,7 @@ final class HomeApps {
 
     static final class Item {
         int kind;
-        String key, label, pkg, inputId, number;
-        String deepLink;
+        String key, label, pkg, inputId, number, uri;
         String symbol;      // icon for the shortcuts and special cards
         Bitmap tile;        // 16:9 card (apps and specials)
         Bitmap logo;        // colored logo with no background (shelf); null = use the card
@@ -218,16 +217,11 @@ final class HomeApps {
 
     /** A streaming service's app (the "Watch" button of the featured pick). */
     static Item app(String pkg, String label) {
-        return app(pkg, label, null);
-    }
-
-    static Item app(String pkg, String label, String deepLink) {
         Item it = new Item();
         it.kind = APP;
         it.key = pkg;
         it.pkg = pkg;
         it.label = label;
-        it.deepLink = deepLink;
         return it;
     }
 
@@ -358,19 +352,10 @@ final class HomeApps {
         Intent intent;
         switch (it.kind) {
             case APP:
-                if (it.deepLink != null && !it.deepLink.isEmpty()) {
-                    try {
-                        AppLog.w("Opening deep link: " + it.deepLink + " for " + it.pkg);
-                        Intent deep = new Intent(Intent.ACTION_VIEW, Uri.parse(it.deepLink));
-                        if (it.pkg != null) deep.setPackage(it.pkg);
-                        deep.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                        a.startActivity(deep, ActivityOptions.makeScaleUpAnimation(from, x, y, Math.max(w, 1), Math.max(h, 1)).toBundle());
-                        return true;
-                    } catch (Exception e) {
-                        AppLog.w("Deep link failed (" + e.getMessage() + "), falling back to main intent");
-                    }
-                }
-                intent = launchIntent(a.getPackageManager(), it.pkg);
+                intent = it.uri == null ? null : new Intent(Intent.ACTION_VIEW, Uri.parse(it.uri))
+                        .addCategory(Intent.CATEGORY_BROWSABLE).setPackage(it.pkg);
+                if (intent != null && intent.resolveActivity(a.getPackageManager()) == null) intent = null;
+                if (intent == null) intent = launchIntent(a.getPackageManager(), it.pkg);
                 if (intent != null) intent.addFlags(Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED);
                 break;
             case LIVE_TV:

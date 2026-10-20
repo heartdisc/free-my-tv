@@ -1822,7 +1822,8 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
         } else if (zone == Z_HERO) {
             Recs.Pick p = currentPick();
             if (p == null || p.pkg == null) return;
-            it = HomeApps.app(p.pkg, Recs.serviceName(p), p.deepLink);
+            it = HomeApps.app(p.pkg, Recs.serviceName(p));
+            it.uri = p.link;
             r = heroButton;
         } else if (zone == Z_STATUS) {
             if (statusItems.isEmpty()) return;
@@ -1842,7 +1843,8 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
         } else if (zone == Z_CARDS) {
             Recs.Pick p = cardIndex < cards.size() ? cards.get(cardIndex) : null;
             if (p == null || p.pkg == null) return;
-            it = HomeApps.app(p.pkg, Recs.serviceName(p), p.deepLink);
+            it = HomeApps.app(p.pkg, Recs.serviceName(p));
+            it.uri = p.link;
             r = cardRects[cardIndex];
         } else {
             if (shelf.isEmpty()) return;
