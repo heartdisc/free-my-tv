@@ -207,6 +207,13 @@ final class Ui {
                 : new SimpleDateFormat("EEEE, d 'de' MMMM", locale()).format(new Date(now));
     }
 
+    /** Abbreviated date, e.g. "อ. 20 ต.ค." in Thai, "Tue, Oct 20" in English. */
+    static String dateShort(long now) {
+        if (th) return new SimpleDateFormat("EEE d MMM", TH).format(new Date(now));
+        return en ? new SimpleDateFormat("EEE, MMM d", Locale.US).format(new Date(now))
+                : new SimpleDateFormat("EEE, d 'de' MMM", locale()).format(new Date(now));
+    }
+
     /** Spinning arc (work in progress). */
     static void spinner(Canvas c, float cx, float cy, float r, float seconds, Paint stroke) {
         OVAL.set(cx - r, cy - r, cx + r, cy + r);
