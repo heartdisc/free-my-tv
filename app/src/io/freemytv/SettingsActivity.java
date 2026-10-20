@@ -16,6 +16,7 @@ import android.os.Handler;
 import android.os.Looper;
 import android.os.SystemClock;
 import android.provider.Settings;
+import android.text.StaticLayout;
 import android.text.TextPaint;
 import android.text.TextUtils;
 import android.view.Choreographer;
@@ -131,6 +132,8 @@ public class SettingsActivity extends Activity {
         private boolean hasKey;
         private int screen = MAIN, focus;
         private boolean running, okDown, backDown, wasBusy;
+        private StaticLayout errorLayout;   // the last error, wrapped (rebuilt only when it changes)
+        private String errorShown;
         private final Spoken spoken;
         private long startedAt, lastNanos, pendingAt, lastSky;
         private int w, h;
@@ -398,8 +401,18 @@ public class SettingsActivity extends Activity {
                         LIST_X * k + 30 * k, y, warn);
                 y += 46 * k;
             } else if (!working && !error.isEmpty()) {
-                c.drawText(TextUtils.ellipsize(error, new TextPaint(warn), 760 * k, TextUtils.TruncateAt.END).toString(), LIST_X * k + 30 * k, y, warn);
-                y += 46 * k;
+                // The whole message, on up to five lines: some say what to do (the Wi-Fi one, #14).
+                int width = Math.round(760 * k);
+                if (errorLayout == null || !error.equals(errorShown) || errorLayout.getWidth() != width) {
+                    errorShown = error;
+                    errorLayout = StaticLayout.Builder.obtain(error, 0, error.length(), new TextPaint(warn), width)
+                            .setMaxLines(5).setEllipsize(TextUtils.TruncateAt.END).build();
+                }
+                c.save();
+                c.translate(LIST_X * k + 30 * k, y - errorLayout.getLineBaseline(0));
+                errorLayout.draw(c);
+                c.restore();
+                y += errorLayout.getLineBaseline(errorLayout.getLineCount() - 1) - errorLayout.getLineBaseline(0) + 46 * k;
             }
             y = drawComparison(c, y);
             y = drawRecs(c, y + 26 * k);
@@ -521,7 +534,7 @@ public class SettingsActivity extends Activity {
             if (m == null || !m.has(key)) return "—";
             long v = m.optLong(key);
             if (key.equals("homeMs")) return v + " ms";
-            if (key.equals("memAvailableMB") && v >= 1024) return String.format(Ui.en || Ui.th ? java.util.Locale.US : Ui.PT, "%.2f GB", v / 1024.0);
+            if (key.equals("memAvailableMB") && v >= 1024) return String.format(Ui.locale(), "%.2f GB", v / 1024.0);
             return v + " MB";
         }
 
@@ -602,7 +615,7 @@ public class SettingsActivity extends Activity {
 
         // MARK: - Home Settings and Remote Buttons
 
-        private static final String[] LANGUAGES = {"auto", "th", "en", "pt"}, UNITS = {"auto", "C", "F"}, THEMES = {"auto", "light", "dark"};
+        private static final String[] LANGUAGES = {"auto", "th", "en", "es", "pt"}, UNITS = {"auto", "C", "F"}, THEMES = {"auto", "light", "dark"};
         /** Home Settings: language, temperature, theme, weather, quotes, then one row per coin. */
         private static final int COIN_ROWS = 5;
 
@@ -628,7 +641,7 @@ public class SettingsActivity extends Activity {
             String[] labels = settingLabels();
             String[] v = new String[labels.length];
             String lang = Prefs.language();
-            v[0] = lang.equals("th") ? "ไทย" : lang.equals("pt") ? "Português" : lang.equals("en") ? "English" : Ui.tr("Automático", "Automatic", "อัตโนมัติ");
+            v[0] = lang.equals("th") ? "ไทย" : lang.equals("pt") ? "Português" : lang.equals("en") ? "English" : lang.equals("es") ? "Español" : Ui.tr("Automático", "Automatic", "อัตโนมัติ");
             String unit = Prefs.temperature();
             v[1] = unit.equals("C") ? "°C" : unit.equals("F") ? "°F" : Ui.tr("Automática", "Automatic", "อัตโนมัติ");
             String theme = Prefs.theme();
@@ -797,6 +810,7 @@ public class SettingsActivity extends Activity {
             float hy = (LIST_TOP + 20 + rows * (LIST_ROW_H + LIST_ROW_GAP) + 36) * k;
             c.drawText(Ui.tr("OK põe ou tira da prateleira (até " + HomeApps.MAX_SHELF + "). ← → mudam a ordem.",
                     "OK adds or removes (up to " + HomeApps.MAX_SHELF + "). ← → change the order.",
+                    "OK pone o quita del estante (hasta " + HomeApps.MAX_SHELF + "). ← → cambian el orden.",
                     "กด OK เพื่อเพิ่มหรือเอาออก (สูงสุด " + HomeApps.MAX_SHELF + " แอป) กด ← → เพื่อสลับลำดับ"), LIST_X * k + 30 * k, hy, hint);
         }
 
