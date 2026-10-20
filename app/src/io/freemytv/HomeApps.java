@@ -71,6 +71,7 @@ final class HomeApps {
         float logoInk;      // fraction of the logo with ink (thin logos are drawn larger, with the same "weight")
         float logoScale = 1; // size tweak by eye (compact logos need more)
         boolean connected = true;
+        int glow;           // ambient glow colour when focused on the shelf
     }
 
     /**
@@ -137,6 +138,9 @@ final class HomeApps {
                 if (it.logo != null) it.logoInk = ink(it.logo);
                 it.logoDark = ownLogoCached(c, d[0] + "-dark");
                 it.logoScale = Float.parseFloat(d[5]);
+                try {
+                    it.glow = 0xFF000000 | Integer.parseInt(d[3], 16);
+                } catch (Exception ignored) {}
             }
             items.add(it);
         }

@@ -219,6 +219,13 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
         }
     };
 
+    // Ambient glow: the focused app's colour rising softly behind the shelf
+    private final Spring glow = new Spring(0.4f, 1f, 0), glowX = new Spring(0.35f, 1f, 0);
+    private int glowColor;
+    private boolean glowDirty;
+    private Bitmap glowMask;
+    private View glowView;
+
     private Paint labelPaint, metaPaint, clockPaint, buttonPaint, capsuleText, tipPaint, quotePaint, staleQuote;
     private Paint rowTitle, drawerLabel, cardTitle, cardText, cardDim, cardDimRight, bigTemp, hourPaint, hourTemp;
     private Paint pricePaint, changePaint, sheetTitle;
@@ -311,6 +318,8 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
         setFocusableInTouchMode(true);
         requestFocus();
         sky = new Layer(a, SKY);
+        glowView = new View(a);
+        glowView.setVisibility(INVISIBLE);
         heroLayer = new Layer(a, HERO);
         status = new Layer(a, STATUS);
         platter = new Layer(a, PLATTER);
@@ -320,7 +329,7 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
         toastLayer = new Layer(a, TOAST);
         // Hardware layers on the GPU: only the one that changed is redrawn; moving, fading and scaling stay cheap.
         for (View v : new View[] {heroLayer, status, platter, tiles, drawerLayer, sheetLayer}) v.setLayerType(LAYER_TYPE_HARDWARE, null);
-        for (View v : new View[] {sky, heroLayer, status, platter, tiles, drawerLayer, sheetLayer, toastLayer}) {
+        for (View v : new View[] {sky, glowView, heroLayer, status, platter, tiles, drawerLayer, sheetLayer, toastLayer}) {
             v.setImportantForAccessibility(IMPORTANT_FOR_ACCESSIBILITY_NO);   // TalkBack reads the items (Spoken)
             addView(v);
         }
@@ -377,6 +386,8 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
         if (!running) return;
         editing = -1;
         handler.removeCallbacks(okHoldRunnable);
+        glow.snap(0);
+        if (glowView != null) glowView.setVisibility(INVISIBLE);
         running = false;
         Choreographer.getInstance().removeFrameCallback(this);
         handler.removeCallbacks(tick);
@@ -394,6 +405,8 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
     void reset(boolean animated) {
         editing = -1;
         handler.removeCallbacks(okHoldRunnable);
+        glow.snap(0);
+        if (glowView != null) glowView.setVisibility(INVISIBLE);
         zone = Z_SHELF;
         shelfIndex = 0;
         sheetOpen = false;
@@ -468,6 +481,10 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
         int width = r - l, height = b - t;
         float kk = width / 1920f;
         sky.layout(0, 0, width, height);
+        if (glowView != null) {
+            int gw = Math.round(width * 0.9f), gh = Math.round(height * 0.62f);
+            glowView.layout(0, height - gh, gw, height);
+        }
         place(heroLayer, 0, 0);
         place(status, width - status.getMeasuredWidth(), 0);
         place(platter, 0, Math.round(750 * kk));
@@ -588,6 +605,7 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
         boolean heroFading = tickHeroFade(up);
         boolean bgFading = tickBackgroundFade(up);
         boolean nightMoving = tickNight(up);
+        boolean glowMoving = glow.step(dt) || glowX.step(dt);
 
         if (drawerMoving || sheetMoving || motionDirty) updateMotion();
         // Opening and closing the drawer only moves the cached layers: redrawing the glass on every frame made the TV
@@ -600,6 +618,8 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
         if (drawerItemsMoving || drawerDirty || bgFading) drawerLayer.invalidate();
         if (gridMoving || gridDirty) sheetLayer.invalidate();
         if (drawerMoving || bgFading) sky.invalidate();
+        if (glowMoving || glowDirty) placeGlow();
+        glowDirty = false;
         if (bgFading || (drawerWasMoving && !drawerMoving)) platter.invalidate();
         drawerWasMoving = drawerMoving;
         tilesDirty = statusDirty = heroDirty = drawerDirty = gridDirty = motionDirty = false;
@@ -1458,6 +1478,7 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
         statusDirty |= snap || statusChanged;
         heroDirty |= snap || heroChanged;
         drawerDirty |= snap || drawerChanged;
+        aimGlow();
         spoken.focusMoved();
     }
 
@@ -2415,5 +2436,81 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
         int ba = b >>> 24, br = (b >> 16) & 255, bg = (b >> 8) & 255, bb = b & 255;
         return (Math.round(aa + (ba - aa) * f) << 24) | (Math.round(ar + (br - ar) * f) << 16)
                 | (Math.round(ag + (bg - ag) * f) << 8) | Math.round(ab + (bb - ab) * f);
+    }
+
+    // MARK: - Ambient glow: the focused app's colour rising softly behind the shelf
+
+    /** Aims the glow at the focused shelf app (its most vivid colour), or fades it out off the shelf. */
+    private void aimGlow() {
+        HomeApps.Item it = zone == Z_SHELF && !sheetOpen && shelfIndex < shelf.size() ? shelf.get(shelfIndex) : null;
+        if (it == null || it.kind != HomeApps.APP) {
+            glow.target = 0;
+            return;
+        }
+        if (it.glow == 0) it.glow = vivid(it.logo != null ? it.logo : it.tile);
+        if (glowColor != it.glow) {
+            glowColor = it.glow;
+            glowDirty = true;
+        }
+        glow.target = 1;
+        float x = tileRects != null && shelfIndex < tileRects.length && tileRects[shelfIndex] != null
+                ? tileRects[shelfIndex].centerX() / Math.max(1, w) : 0.5f;
+        if (glow.value < 0.02f) glowX.snap(x); else glowX.target = x;
+    }
+
+    /**
+     * The glow is its own view over the background: moving and fading it only recomposes one small texture.
+     */
+    private void placeGlow() {
+        if (glowView == null || w == 0) return;
+        float a = Ui.clamp(glow.value);
+        glowView.setVisibility(a < 0.01f || glowColor == 0 ? INVISIBLE : VISIBLE);
+        if (a < 0.01f) return;
+        if (glowMask == null) {
+            glowMask = Bitmap.createBitmap(240, 135, Bitmap.Config.ARGB_8888);
+            Paint p = new Paint(Paint.ANTI_ALIAS_FLAG);
+            p.setShader(new android.graphics.RadialGradient(120, 135, 130, new int[] {0x99FFFFFF, 0x33FFFFFF, 0x00FFFFFF},
+                    new float[] {0, 0.5f, 1}, Shader.TileMode.CLAMP));
+            new Canvas(glowMask).drawRect(0, 0, 240, 135, p);
+        }
+        if (glowView.getBackground() == null) {
+            android.graphics.drawable.BitmapDrawable d = new android.graphics.drawable.BitmapDrawable(getResources(), glowMask);
+            d.setFilterBitmap(true);
+            glowView.setBackground(d);
+        }
+        if (glowView.getTag() == null || (int) glowView.getTag() != glowColor) {
+            glowView.getBackground().setTint(glowColor);
+            glowView.setTag(glowColor);
+        }
+        int gw = Math.round(w * 0.9f), gh = Math.round(h * 0.62f);
+        if (glowView.getWidth() != gw) glowView.layout(0, h - gh, gw, h);
+        glowView.setTranslationX(glowX.value * w - gw / 2f);
+        glowView.setAlpha(a * tone(0.45f, 0.6f));
+    }
+
+    /** The most saturated, not-too-dark colour of an image, lifted so it glows. */
+    private static int vivid(Bitmap b) {
+        if (b == null) return 0xFF0A84FF;
+        Bitmap s = Bitmap.createScaledBitmap(b, 12, 12, true);
+        float[] hsv = new float[3];
+        int best = 0xFF0A84FF;
+        float bestScore = -1;
+        for (int y = 0; y < 12; y++) {
+            for (int x = 0; x < 12; x++) {
+                int p = s.getPixel(x, y);
+                if ((p >>> 24) < 160) continue;
+                android.graphics.Color.colorToHSV(p, hsv);
+                float score = hsv[1] * Math.min(1f, hsv[2] * 1.4f);
+                if (score > bestScore) {
+                    bestScore = score;
+                    best = p;
+                }
+            }
+        }
+        if (s != b) s.recycle();
+        android.graphics.Color.colorToHSV(best, hsv);
+        if (bestScore < 0.25f) hsv[1] = 0;
+        hsv[2] = Math.max(0.6f, hsv[2]);
+        return android.graphics.Color.HSVToColor(hsv);
     }
 }

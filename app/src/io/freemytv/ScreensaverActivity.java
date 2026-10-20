@@ -3,6 +3,7 @@ package io.freemytv;
 import android.app.Activity;
 import android.os.Bundle;
 import android.view.KeyEvent;
+import android.view.View;
 import android.view.WindowInsets;
 import android.view.WindowInsetsController;
 import android.view.WindowManager;
@@ -12,15 +13,16 @@ import android.view.WindowManager;
  * Any key press immediately dismisses the screensaver and returns to the home screen.
  */
 public class ScreensaverActivity extends Activity {
-    private DreamView view;
+    private Screensaver.Dream view;
 
     @Override protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         Ui.init(this);
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN
                 | WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
-        view = new DreamView(this);
-        setContentView(view);
+        View v = Screensaver.make(this);
+        setContentView(v);
+        view = (Screensaver.Dream) v;
     }
 
     @Override protected void onResume() {

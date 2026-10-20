@@ -42,7 +42,7 @@ import java.util.Set;
  */
 public class SettingsActivity extends Activity {
     private SettingsView view;
-    private DreamView preview;   // "Screensaver": the screensaver right here, without changing the system setting
+    private Screensaver.Dream preview;   // "Screensaver": the screensaver right here, without changing the system setting
 
     @Override protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -96,8 +96,9 @@ public class SettingsActivity extends Activity {
     }
 
     void showPreview() {
-        preview = new DreamView(this);
-        setContentView(preview);
+        View v = Screensaver.make(this);
+        setContentView(v);
+        preview = (Screensaver.Dream) v;
         preview.start();
     }
 
@@ -622,9 +623,10 @@ public class SettingsActivity extends Activity {
 
         private static final String[] LANGUAGES = {"auto", "th", "en", "es", "pt"},
                 FONTS = {"google", "anuphan", "noto", "ibm", "lineseed", "inter"},
-                UNITS = {"auto", "C", "F"}, THEMES = {"auto", "light", "dark"};
-        /** Home Settings: language, font, temperature, theme, weather, quotes, then one row per coin. */
-        private static final int COIN_ROWS = 6;
+                UNITS = {"auto", "C", "F"}, THEMES = {"auto", "light", "dark"},
+                SCREENSAVER_STYLES = {"landscapes", "frame", "recs"};
+        /** Home Settings: language, font, temperature, theme, screensaver style, weather, quotes, then one row per coin. */
+        private static final int COIN_ROWS = 7;
 
         private boolean dollar() {
             return "BRL".equalsIgnoreCase(Config.CURRENCY.trim());
@@ -636,6 +638,7 @@ public class SettingsActivity extends Activity {
             l.add(Ui.tr("Fonte", "Font", "ฟอนต์"));
             l.add(Ui.tr("Temperatura", "Temperature", "อุณหภูมิ"));
             l.add(Ui.tr("Tema", "Theme", "ธีม"));
+            l.add(Ui.tr("Estilo da tela de descanso", "Screensaver style", "สไตล์สกรีนเซฟเวอร์"));
             l.add(Ui.tr("Widget do clima", "Weather widget", "วิดเจ็ตสภาพอากาศ"));
             l.add(Ui.tr("Widget de cotações", "Quotes widget", "วิดเจ็ตราคาคริปโต"));
             l.add("Bitcoin");
@@ -666,8 +669,12 @@ public class SettingsActivity extends Activity {
             v[2] = unit.equals("C") ? "°C" : unit.equals("F") ? "°F" : Ui.tr("Automática", "Automatic", "อัตโนมัติ");
             String theme = Prefs.theme();
             v[3] = theme.equals("light") ? Ui.tr("Claro", "Light", "สว่าง") : theme.equals("dark") ? Ui.tr("Escuro", "Dark", "มืด") : Ui.tr("Automático", "Automatic", "อัตโนมัติ");
-            v[4] = onOff(Prefs.weather());
-            v[5] = onOff(Prefs.quotes());
+            String style = Prefs.screensaverStyle();
+            v[4] = style.equals("frame") ? Ui.tr("Moldura (The Frame)", "Frame (The Frame)", "กรอบรูปศิลปะ (The Frame)")
+                    : style.equals("recs") ? Ui.tr("Recomendações (TMDB)", "Recommendations (TMDB)", "แนะนำหนัง/ซีรีส์ (TMDB)")
+                    : Ui.tr("Paisagens (Bing)", "Landscapes (Bing)", "ภาพวิวประจำวัน (Bing)");
+            v[5] = onOff(Prefs.weather());
+            v[6] = onOff(Prefs.quotes());
             // No quotes widget, nowhere to show prices: the coins read as off (and stay locked) until it is back on.
             for (int i = COIN_ROWS; i < v.length; i++) v[i] = onOff(Prefs.quotes() && Prefs.coin(i - COIN_ROWS));
             return v;
@@ -746,8 +753,14 @@ public class SettingsActivity extends Activity {
                     Prefs.setTheme(THEMES[(at + dir + THEMES.length) % THEMES.length]);
                     break;
                 }
-                case 4: Prefs.setWeather(!Prefs.weather()); break;
-                case 5: Prefs.setQuotes(!Prefs.quotes()); break;
+                case 4: {
+                    int at = java.util.Arrays.asList(SCREENSAVER_STYLES).indexOf(Prefs.screensaverStyle());
+                    if (at < 0) at = 0;
+                    Prefs.setScreensaverStyle(SCREENSAVER_STYLES[(at + dir + SCREENSAVER_STYLES.length) % SCREENSAVER_STYLES.length]);
+                    break;
+                }
+                case 5: Prefs.setWeather(!Prefs.weather()); break;
+                case 6: Prefs.setQuotes(!Prefs.quotes()); break;
                 default:
                     if (!Prefs.quotes()) return;
                     Prefs.setCoin(focus - COIN_ROWS, !Prefs.coin(focus - COIN_ROWS));

@@ -98,6 +98,10 @@ final class Prefs {
     static String latitude() { return Config.LATITUDE; }
     static String longitude() { return Config.LONGITUDE; }
 
+    // MARK: - Screensaver
+    static String screensaverStyle() { return sp().getString("screensaverStyle", "landscapes"); }
+    static void setScreensaverStyle(String style) { put("screensaverStyle", style); }
+
     // MARK: - Widgets and coins
 
     static boolean weather() { return sp().getBoolean("weather", true); }
