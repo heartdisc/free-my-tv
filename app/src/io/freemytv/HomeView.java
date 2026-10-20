@@ -33,6 +33,7 @@ import org.json.JSONObject;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -209,6 +210,14 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
     private String clockText = "";
     private long clockMinute = -1;
     private boolean okDown, backDown;
+    /** Editing the shelf (tvOS: hold OK on an app): the app being moved, or -1. */
+    private int editing = -1;
+    private boolean okHeld;
+    private final Runnable okHoldRunnable = () -> {
+        if (okDown && !okHeld) {
+            okHeld = hold();
+        }
+    };
 
     private Paint labelPaint, metaPaint, clockPaint, buttonPaint, capsuleText, tipPaint, quotePaint, staleQuote;
     private Paint rowTitle, drawerLabel, cardTitle, cardText, cardDim, cardDimRight, bigTemp, hourPaint, hourTemp;
@@ -366,6 +375,8 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
 
     void pause() {
         if (!running) return;
+        editing = -1;
+        handler.removeCallbacks(okHoldRunnable);
         running = false;
         Choreographer.getInstance().removeFrameCallback(this);
         handler.removeCallbacks(tick);
@@ -381,6 +392,8 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
 
     /** Starting state (Home pressed while the home screen is showing): first app focused, drawer and sheet closed. */
     void reset(boolean animated) {
+        editing = -1;
+        handler.removeCallbacks(okHoldRunnable);
         zone = Z_SHELF;
         shelfIndex = 0;
         sheetOpen = false;
@@ -581,7 +594,7 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
         // drop frames (measured: ~50 ms of GPU per frame). The app tiles have no glass; the top buttons fade out as
         // they rise; the drawer is drawn resting in place; the glass shelf is redrawn once the drawer stops, so the
         // glass shows the background where it ended up.
-        if (tilesMoving || tilesDirty) tiles.invalidate();
+        if (tilesMoving || tilesDirty || editing >= 0) tiles.invalidate();
         if (statusMoving || statusDirty || bgFading) status.invalidate();
         if (heroMoving || heroDirty || heroFading) heroLayer.invalidate();
         if (drawerItemsMoving || drawerDirty || bgFading) drawerLayer.invalidate();
@@ -1098,7 +1111,14 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
         for (int pass = 0; pass < 2; pass++) {
             for (int i = 0; i < shelf.size(); i++) {
                 if ((pass == 0) == (i == top)) continue;
-                drawShelfTile(c, i);
+                if (i == editing) {   // jiggles while you move it, like tvOS
+                    c.save();
+                    c.rotate(1.8f * (float) Math.sin(SystemClock.uptimeMillis() / 70.0), tileRects[i].centerX(), tileRects[i].centerY());
+                    drawShelfTile(c, i);
+                    c.restore();
+                } else {
+                    drawShelfTile(c, i);
+                }
             }
         }
     }
@@ -1680,9 +1700,19 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
                 // Opens on release, and only if the press happened here: the release of an OK pressed inside another
                 // app opens nothing.
                 if (down) {
-                    if (e.getRepeatCount() == 0) okDown = true;
+                    if (e.getRepeatCount() == 0) {
+                        okDown = true;
+                        okHeld = false;
+                        handler.postDelayed(okHoldRunnable, 500);
+                    } else if (okDown && !okHeld && ((e.getFlags() & KeyEvent.FLAG_LONG_PRESS) != 0
+                            || e.getEventTime() - e.getDownTime() >= 500)) {
+                        handler.removeCallbacks(okHoldRunnable);
+                        okHeld = hold();
+                    }
                 } else {
-                    if (okDown && !e.isCanceled() && spoken.keyClick()) activate();
+                    handler.removeCallbacks(okHoldRunnable);
+                    if (editing >= 0 && okDown && !okHeld) endEditing();
+                    else if (okDown && !okHeld && !e.isCanceled() && spoken.keyClick()) activate();
                     okDown = false;
                 }
                 return true;
@@ -1690,7 +1720,10 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
                 if (down) {
                     if (e.getRepeatCount() == 0) backDown = true;
                 } else {
-                    if (backDown && !e.isCanceled()) back();
+                    if (backDown && !e.isCanceled()) {
+                        if (editing >= 0) endEditing();
+                        else back();
+                    }
                     backDown = false;
                 }
                 return true;
@@ -1727,7 +1760,61 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
         }
     }
 
+    /** OK held: on the shelf, edit it (like tvOS); in All Apps, a hidden shelf app goes back to the shelf. */
+    private boolean hold() {
+        if (sheetOpen) {
+            if (others.isEmpty() || gridIndex < 0 || gridIndex >= others.size()) return false;
+            HomeApps.Item it = others.get(gridIndex);
+            if (HomeApps.addToShelf(getContext(), it.pkg)) {
+                showToast(String.format(Ui.tr("%s está no Início", "%s added to home shelf", "%s เพิ่มไปที่หน้าหลักแล้ว"), it.label));
+                reload();
+                return true;
+            } else {
+                showToast(Ui.tr("O Início está cheio", "Home shelf is full", "หน้าหลักเต็มแล้ว (สูงสุด 9 แอป)"));
+                return false;
+            }
+        }
+        if (zone != Z_SHELF || shelf.isEmpty() || drawerOpen || editing >= 0) return false;
+        editing = shelfIndex;
+        showToast(Ui.tr("← → para mover · ↓ para ocultar · OK para terminar",
+                "← → to move · ↓ to hide · OK when done",
+                "← → เลื่อนตำแหน่ง · ↓ ซ่อนแอป · OK เมื่อเสร็จ"));
+        return true;
+    }
+
+    private void endEditing() {
+        editing = -1;
+        tilesDirty = true;
+    }
+
+    /** Editing the shelf: left/right moves the app, down hides it (to All Apps), up does nothing. */
+    private void moveEditing(int dx, int dy) {
+        if (dx != 0) {
+            int to = editing + dx;
+            if (to < 0 || to >= shelf.size()) return;
+            List<HomeApps.Item> list = new ArrayList<>(shelf);
+            Collections.swap(list, editing, to);
+            Spring s = tileFocus[editing];
+            tileFocus[editing] = tileFocus[to];
+            tileFocus[to] = s;
+            shelf = list;
+            editing = shelfIndex = to;
+            HomeApps.saveOrder(getContext(), shelf);
+            tilesDirty = true;
+        } else if (dy > 0) {
+            HomeApps.Item it = shelf.get(editing);
+            HomeApps.hideFromShelf(getContext(), it.pkg);
+            editing = -1;
+            showToast(String.format(Ui.tr("%s está em Todos os Apps", "%s is in All Apps now", "%s ถูกย้ายไปที่แอปทั้งหมดแล้ว"), it.label));
+            reload();
+        }
+    }
+
     private void move(int dx, int dy) {
+        if (editing >= 0) {
+            moveEditing(dx, dy);
+            return;
+        }
         if (sheetOpen) {
             moveGrid(dx, dy);
             return;

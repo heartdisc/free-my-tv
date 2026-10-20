@@ -148,6 +148,29 @@ final class HomeApps {
         return null;
     }
 
+    /** Packages on the shelf, in the order they were placed. */
+    static void saveOrder(Context c, List<Item> shelf) {
+        List<String> pkgs = new ArrayList<>();
+        for (Item it : shelf) pkgs.add(it.pkg);
+        Prefs.setShelf(pkgs);
+    }
+
+    /** Takes an app off the shelf (it moves to All Apps). */
+    static void hideFromShelf(Context c, String pkg) {
+        List<String> pkgs = new ArrayList<>(shelfPackages(c));
+        pkgs.remove(pkg);
+        Prefs.setShelf(pkgs);
+    }
+
+    /** Adds an app to the shelf (at the end) if not already present. */
+    static boolean addToShelf(Context c, String pkg) {
+        List<String> pkgs = new ArrayList<>(shelfPackages(c));
+        if (pkgs.contains(pkg) || pkgs.size() >= MAX_SHELF) return false;
+        pkgs.add(pkg);
+        Prefs.setShelf(pkgs);
+        return true;
+    }
+
     /** The shelf's packages in order: the user's list (Settings > Shelf), or the built-in one. */
     static List<String> shelfPackages(Context c) {
         List<String> custom = Prefs.shelf();
@@ -323,8 +346,7 @@ final class HomeApps {
     /** Installed, enabled TV apps that are not on the home screen (the TV's Settings is among them), plus our own. */
     static List<Item> others(Context c) {
         PackageManager pm = c.getPackageManager();
-        Set<String> skip = new HashSet<>();
-        for (String[] d : SHELF) skip.add(d[2]);
+        Set<String> skip = new HashSet<>(shelfPackages(c));
         skip.addAll(java.util.Arrays.asList(LIVE_TV_APPS));
         skip.add(c.getPackageName());
         skip.addAll(HIDDEN);
@@ -334,12 +356,19 @@ final class HomeApps {
         for (ResolveInfo ri : pm.queryIntentActivities(query, 0)) {
             String pkg = ri.activityInfo.packageName;
             if (skip.contains(pkg) || !seen.add(pkg)) continue;
+            String[] d = known(pkg);
             Item it = new Item();
             it.kind = APP;
             it.pkg = pkg;
-            it.key = pkg;
-            it.label = String.valueOf(ri.loadLabel(pm));
-            it.tile = appTile(c, null, pkg, 0);
+            if (d == null) {
+                it.key = pkg;
+                it.label = String.valueOf(ri.loadLabel(pm));
+                it.tile = appTile(c, null, pkg, 0);
+            } else {
+                it.key = d[0];
+                it.label = d[1];
+                it.tile = appTile(c, d[0], d[2], 0xFF000000 | Integer.parseInt(d[3], 16));
+            }
             items.add(it);
         }
         Collections.sort(items, (a, b) -> a.label.toLowerCase(Locale.ROOT).compareTo(b.label.toLowerCase(Locale.ROOT)));
