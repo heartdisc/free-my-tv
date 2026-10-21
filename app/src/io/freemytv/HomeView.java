@@ -534,13 +534,13 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
         clockPaint = Ui.numbers(Ui.thin, 176 * k, 0xFFFFFFFF);
         clockPaint.setLetterSpacing(-0.01f);
         for (Paint p : new Paint[] {labelPaint, titlePaint, metaPaint, clockPaint}) p.setShadowLayer(22 * k, 0, 2 * k, 0x59000000);
-        lGreeting = Ui.text(Ui.medium, 13 * k, L_DIM);
+        lGreeting = Ui.text(Ui.medium, 14 * k, L_DIM);
         lGreeting.setLetterSpacing(Ui.th ? 0.06f : 0.22f);
         lClock = Ui.numbers(Ui.light, 52 * k, L_INK);
         lClock.setLetterSpacing(-0.04f);
-        lAmPm = Ui.text(Ui.medium, 15 * k, L_DIM);
+        lAmPm = Ui.text(Ui.medium, 16 * k, L_DIM);
         lAmPm.setLetterSpacing(0.08f);
-        lDate = Ui.text(Ui.regular, 15 * k, L_DIM);
+        lDate = Ui.text(Ui.regular, 17 * k, L_DIM);
         lDate.setLetterSpacing(Ui.th ? 0.04f : 0.14f);
         lDividerPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
         lDividerPaint.setStrokeWidth(1.5f * k);
@@ -2271,7 +2271,7 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
         else greeting = Ui.tr("Boa noite", "Good night", "สวัสดียามค่ำคืน");
         if (!Ui.th) greeting = greeting.toUpperCase(Locale.ROOT);
 
-        float greetingY = (L_TITLE_BASE - 48) * k;
+        float greetingY = (L_TITLE_BASE - 52) * k;
         c.drawText(greeting, MARGIN * k + 2 * k, greetingY, lGreeting);
 
         boolean is24 = android.text.format.DateFormat.is24HourFormat(getContext());
@@ -2295,7 +2295,7 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
         }
 
         x += 16 * k;
-        c.drawLine(x, (L_TITLE_BASE - 28) * k, x, (L_TITLE_BASE - 2) * k, lDividerPaint);
+        c.drawLine(x, (L_TITLE_BASE - 32) * k, x, (L_TITLE_BASE - 6) * k, lDividerPaint);
         x += 16 * k;
 
         String datePattern = Ui.th ? "EEEE  d MMMM" : Ui.en ? "EEEE  d MMMM" : "EEEE  d 'de' MMMM";
