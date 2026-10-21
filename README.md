@@ -38,7 +38,7 @@ About ten minutes. You need a Google TV or Android TV (Android 9 or newer) and a
 1. **On the TV**, turn on developer mode: Settings → System → About → press *Android TV OS build* 7 times. Then Settings → System → Developer options → turn on **USB debugging**. Write down the TV's IP address (Settings → Network & Internet).
 2. **On your computer**, get the code:
    ```bash
-   git clone https://github.com/simbasjungles/free-my-tv && cd free-my-tv
+   git clone https://github.com/heartdisc/free-my-tv && cd free-my-tv
    ```
 3. **Open [Claude Code](https://claude.com/claude-code) in that folder** and say:
    > Install Free My TV on my TV at 192.168.1.50. I live in Lisbon.
