@@ -36,8 +36,13 @@ final class HomeMode {
     static final String PKG = "io.freemytv";
     static final String HOME_ACTIVITY = PKG + "/" + PKG + ".HomeActivity";
     static final String SETTINGS_ACTIVITY = PKG + "/" + PKG + ".SettingsActivity";
-    static final String DREAM = PKG + "/" + PKG + ".Screensaver";
+    /** Our screensaver: on Android 11 the copy that runs in the main process (ScreensaverAlone, #10). */
+    static final String DREAM = PKG + "/" + PKG + (Build.VERSION.SDK_INT == 30 ? ".ScreensaverAlone" : ".Screensaver");
     static final String FREE = "free", ORIGINAL = "original";
+
+    /** Classic Android TV's home screen; its recommendations service crashes on the screensaver while it's off (#11). */
+    static final String TV_LAUNCHER = "com.google.android.tvlauncher";
+    static final String TV_RECOMMENDATIONS = "com.google.android.tvrecommendations";
 
     /** Google TV's home screen: the fallback when the TV's own one wasn't recorded. */
     static final String GOOGLE_HOME = "com.google.android.apps.tv.launcherx/.home.HomeActivity";
@@ -56,6 +61,15 @@ final class HomeMode {
         "com.tcl.messagebox", "com.tcl.usercenter",                                   // TCL messages and account
         "com.tcl.exhibit", "com.tcl.esticker", "com.tcl.hotelmenu",                   // store demo, hotel menu
         "com.tcl.repairguide", "com.tcl.ocean.instructions", "com.tcl.logkit",        // repair guide, manual, logs
+        // Multilaser (Expressluck / CVTE board)
+        "tv.anoki.acr.anokiacroptin",                                                 // Anoki ACR: watches what's on screen
+        "fusion.android.tv.demo", "com.expressluck.tvhelpmanual",                     // store demo, manual
+        // Philco (Homwee/Changhong)
+        "com.homwee.aipont",                                                          // AI PONT: promo channels, app downloads
+        "com.homwee.help",                                                            // user manual
+        // Xiaomi
+        "com.miui.tv.analytics", "com.xiaomi.statistic",                              // telemetry
+        "com.mitv.tvhome.mitvplus", "com.xm.webcontent",                              // Mi TV+ promo channels, promo web content
     };
 
     /** The voice assistant, only with disable_assistant=true in config.properties (the mic button stops working). */
@@ -70,7 +84,27 @@ final class HomeMode {
         "com.tcl.useragreement", "com.tcl.factory.view", "com.tcl.guard", "com.tcl.t_solo",
         "com.google.android.gms", "com.google.android.gsf", "com.android.vending", "com.google.android.apps.mediashell",
         "com.google.android.tv.remote.service", "com.google.android.inputmethod.latin", "com.google.android.webview",
-        "com.android.tv.settings", "com.android.systemui", "android", PKG));
+        "com.android.tv.settings", "com.android.systemui", "android", PKG,
+        // Philips / MediaTek (Android TV 9 to 11 on classic launchers)
+        "org.droidtv", "org.droidtv.ambisvc", "org.droidtv.ui.strings", "org.droidtv.tv.packageinfo", "org.droidtv.icp",
+        "org.droidtv.gel", "org.droidtv.eum", "com.mediatek.tv.service", "com.mediatek.tvinput", "com.mediatek.network",
+        "com.mediatek.wwtv.tvcenter", "com.mediatek.wwtv.setupwizard", "com.mediatek.tv.factory",
+        "mediatek.factorymenu.ui", "com.tpv.xmic.ots.cms.client",
+        // Multilaser (Expressluck / CVTE): remote pairing and keys, live TV, media player, factory menus
+        "com.express.bt.autopair", "com.mediatek.autopair", "com.mediatek.hotkey.dispatcher",
+        "com.mediatek.android.tv.globalkeyoverlay", "com.cltv.fast", "com.mediatek.wwtv.mediaplayer",
+        "com.mediatek.androidbox", "com.expressluck.facmenu", "com.express.at.factory.factorymanager",
+        "com.at.factory.androidtvaidlservice", "com.cvte.tv.at", "com.cvte.tv.fac.aging", "com.express.fac.test",
+        // Philco (Homwee/Changhong): MediaTek pieces, remote pairing, updates, factory menu, TV manager
+        "com.mediatek.tv.factorykey", "com.mediatek.testpq", "com.mediatek.overlay.tvcenter",
+        "com.mediatek.overlay.tvsettings", "com.homwee.overlay.tvservice", "com.homwee.synckey", "com.homwee.upgrade",
+        "com.homwee.dmt.upgrade", "com.homwee.factory", "com.homwee.chinstallapk", "com.homwee.chtvmanager",
+        "com.mstar.android.tv.disclaimercustomization",
+        // Xiaomi (MediaTek): system service, remote pairing, live TV, quick settings, child lock, updates, casting
+        "mitv.service", "com.mi.bluetooth", "com.mitv.livetv.ci_mediatek", "com.xiaomi.tvqs.overseas",
+        "com.mitv.tvlock", "com.xiaomi.mitv.updateservice", "com.xiaomi.android.tvsetup.partnercustomizer",
+        "com.mitv.overseaservice", "com.xiaomi.mitv.tvmanager", "com.xiaomi.wfdsinkhelperservice",
+        "com.mitv.milinkservice", "com.xiaomi.mitv.smartshare", "android.autoinstalls.config.xiaomi.amelie"));
 
     /** One switch at a time (jobs can overlap: a boot check and a button press). */
     private static final Object RUN = new Object();
@@ -365,7 +399,8 @@ final class HomeMode {
                     adb.shell("cmd package set-home-activity " + HOME_ACTIVITY);
                     fixed.add(Ui.tr("o Início", "the home screen", "หน้าจอหลัก"));
                 }
-                if (!adb.shell("settings get secure screensaver_components").contains(DREAM)) {
+                // Whole component names: ".ScreensaverAlone" (Android 11) contains ".Screensaver" (12 and newer).
+                if (!reverted && !Arrays.asList(adb.shell("settings get secure screensaver_components").trim().split(",")).contains(DREAM)) {
                     adb.shell("settings put secure screensaver_components " + DREAM);
                     fixed.add(Ui.tr("a tela de descanso", "the screensaver", "สกรีนเซฟเวอร์"));
                 }
@@ -390,6 +425,7 @@ final class HomeMode {
         List<String> out = new ArrayList<>();
         String homePkg = packageOf(home);
         if (homePkg != null && !homePkg.equals(PKG)) out.add(homePkg);
+        if (TV_LAUNCHER.equals(homePkg)) out.add(TV_RECOMMENDATIONS);
         out.add(GOOGLE_SETUP);
         String dreamPkg = packageOf(dream);
         if (dreamPkg != null && !dreamPkg.equals(PKG) && !dreamPkg.equals(homePkg)) out.add(dreamPkg);

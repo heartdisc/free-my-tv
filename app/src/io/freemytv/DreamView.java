@@ -95,7 +95,7 @@ final class DreamView extends View implements Screensaver.Dream, Choreographer.F
         }
     }
 
-    private final Scene scene = new Scene();
+    private final Scene scene = new Scene(false);
     private final HomeData data;
     private final Recs recs;
     private final Handler handler = new Handler(Looper.getMainLooper());

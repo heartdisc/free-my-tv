@@ -88,6 +88,13 @@ final class Spanish {
             case "Light": return "Claro";
             case "Dark": return "Oscuro";
             case "Weather widget": return "Widget del clima";
+            case "City": return "Ciudad";
+            case "Searching…": return "Buscando…";
+            case "Type the city's name": return "Escribe el nombre de la ciudad";
+            case "Search": return "Buscar";
+            case "Cancel": return "Cancelar";
+            case "No city with that name.": return "Ninguna ciudad con ese nombre.";
+            case "Couldn't search now: ": return "No se pudo buscar ahora: ";
             case "Quotes widget": return "Widget de cotizaciones";
             case "On": return "Activado";
             case "Off": return "Desactivado";
@@ -105,6 +112,7 @@ final class Spanish {
             case "OK or the arrows change the value.": return "OK o las flechas cambian el valor.";
             case "OK picks, Back cancels.": return "OK elige, Atrás cancela.";
             case "Disney and Globoplay: the TV itself controls those buttons.": return "Disney y Globoplay: el propio TV controla esos botones.";
+            case "YouTube, Prime Video and Google Play: the TV itself controls those buttons.": return "YouTube, Prime Video y Google Play: el propio TV controla esos botones.";
             case "These are the TCL remote's buttons: on this TV, the buttons work as they always did.": return "Estos son los botones del control de TCL: en este TV, los botones funcionan como siempre.";
             default:
                 if (english.startsWith("Free My TV is on: new home screen and screensaver, ")) {

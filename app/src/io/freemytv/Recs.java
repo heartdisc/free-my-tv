@@ -594,7 +594,7 @@ final class Recs {
             if (b == null || b.optString("file_path", "").isEmpty()) continue;
             boolean textless = b.isNull("iso_639_1");
             int width = b.optInt("width");
-            double score = (textless ? 1e7 : 0) + Math.min(width, 3840) * 100 + b.optDouble("vote_average", 0);
+            double score = (textless ? 1e7 : 0) + Math.min(width, 1920) * 100 - Math.max(0, width - 1920) + b.optDouble("vote_average", 0);
             if (score > bestScore) {
                 bestScore = score;
                 best = b.optString("file_path");
@@ -668,6 +668,10 @@ final class Recs {
             byte[] buffer = new byte[16384];
             int n;
             while ((n = in.read(buffer)) > 0) out.write(buffer, 0, n);
+        } catch (IOException e) {
+            //noinspection ResultOfMethodCallIgnored
+            part.delete();
+            throw e;
         } finally {
             c.disconnect();
         }
@@ -707,8 +711,24 @@ final class Recs {
         }
     }
 
+    void trim() {
+        // Explore's picks stay: the home screen opens on that tab, so its cards are never gray when you come back.
+        java.util.Set<String> keep = new java.util.HashSet<>();
+        for (Pick p : now(null)) if (p.backdrop != null) keep.add(p.backdrop);
+        synchronized (images) {
+            images.keySet().retainAll(keep);
+        }
+    }
+
     private static void prune(File dir) {
-        File[] files = dir.listFiles();
+        // A download cut off when the system stopped the app leaves its .part behind.
+        long stale = System.currentTimeMillis() - 10 * 60_000L;
+        File[] parts = dir.listFiles((d, name) -> name.endsWith(".part"));
+        for (int i = 0; parts != null && i < parts.length; i++) {
+            //noinspection ResultOfMethodCallIgnored
+            if (parts[i].lastModified() < stale) parts[i].delete();
+        }
+        File[] files = dir.listFiles((d, name) -> !name.endsWith(".part"));
         if (files == null || files.length <= 24) return;
         Arrays.sort(files, (a, b) -> Long.compare(a.lastModified(), b.lastModified()));
         for (int i = 0; i < files.length - 24; i++) {
