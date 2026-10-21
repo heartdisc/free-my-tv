@@ -18,18 +18,20 @@ Open source. Built with Claude Code. One button to undo.
 ## What you get
 
 - **No ads.** No sponsored rows, banners or autoplaying promos. Not one.
-- **Your apps, front and center.** The streaming apps you actually use, on a glass shelf. Pick them and their order right on the TV.
-- **Trending, not sponsored.** Three fresh picks every hour from what's trending this week and the latest releases, only from apps you already have. Movies and Shows get their own tabs.
+- **Your apps, front and center.** The streaming apps you actually use, on a glass shelf with ambient glow. Long-press OK to enter jiggle mode: reorder icons with Left/Right, or press Down to hide. Uninstalled apps are automatically purged from the shelf.
+- **Dynamic greeting & clock header.** Clean top-left status bar showing a time-of-day greeting, large clock (12h/24h), vertical divider, and localized date.
+- **Trending, not sponsored.** Fresh picks every hour from what's trending and latest releases from your installed apps. Seamless deep-linking opens movies and shows directly in Netflix, Disney+, Prime Video, Apple TV, and more.
 - **Weather and markets, one press away.** The hour-by-hour forecast, sunrise and sunset, and live crypto prices.
-- **Light by day, dark by night.** It follows your city's real sunset, the way your phone does.
-- **A screensaver to match.** Full-screen photos of the picks with a big glass clock.
-- **Fast.** 60 fps, every frame in 16.6 ms, on the TV's own chip. The home screen uses 96 MB of memory instead of 242 MB (−60%).<br><sub>Measured on a 98″ TCL Google TV running Android 14.</sub>
-- **Set up on the TV.** Language, temperature, theme, the weather and prices cards, which coins, and the apps on the shelf, in Free My TV's own settings.
-- **Safe.** No root. Nothing is uninstalled. One button brings back the factory home screen.
+- **Light by day, dark by night.** Follows your city's real sunset, the way your phone does.
+- **Screensaver on demand.** Press Back on the home screen to instantly launch full-screen screensavers: choose between TMDB trending artwork or Bing daily 4K landscape wallpapers.
+- **Multilingual with Thai support.** Supports English, Spanish, Brazilian Portuguese, and Thai (with built-in Thai typography: Anuphan, Google Sans, Noto, IBM Plex, and LINE Seed).
+- **Fast.** 60 fps, every frame in 16.6 ms on the TV's own chip. The home screen uses ~96 MB of memory instead of 242 MB (−60%).
+- **Set up on the TV.** Language, font family, temperature, theme, screensaver style, weather/prices cards, crypto coins, and app shelf order right in Free My TV's settings.
+- **Safe.** No root required. Nothing is uninstalled. One button brings back the factory home screen.
 
 ## Install
 
-About ten minutes. You need a Google TV or Android TV (Android 12 or newer) and a computer on the same Wi-Fi.
+About ten minutes. You need a Google TV or Android TV (Android 9 or newer) and a computer on the same Wi-Fi.
 
 ### The easy way: Claude Code
 
@@ -79,11 +81,17 @@ The first values come from `config.properties`, created by the first build. Most
 | `tmdb_region` | Your country (two letters): which titles are on which app | `US` |
 | `latitude`, `longitude` | Your city, for the weather and the sunset | New York |
 | `city` | The name on the weather card | `Weather` |
-| `language` | `auto` (follows the TV), `en`, `es` or `pt` | `auto` |
+| `language` | `auto` (follows the TV), `en`, `es`, `pt` or `th` | `auto` |
 | `show_crypto` | Show Binance crypto prices on home and screensaver | `true` |
 | `currency` | Crypto prices in `USD`, `EUR`, `BRL`… | `USD` |
 | `temperature` | `C`, `F` or `auto` | `auto` |
 | `disable_assistant` | Also turn off Google Assistant | `false` |
+
+Additional settings configurable directly on the TV (*Free My TV* → *Home Settings*):
+- **Language & Fonts**: English, Spanish, Portuguese, and Thai. When Thai is selected, choose from five typeface styles (*Google Sans*, *Anuphan*, *Noto Sans Thai*, *IBM Plex Sans Thai*, *LINE Seed*).
+- **Screensaver Style**: Choose between *Landscapes* (Bing daily 4K photography) and *Trending Picks* (TMDB).
+- **Time Format (12h/24h)**: Follows the TV's system date & time setting (*Settings* → *System* / *Device Preferences* → *Date & Time* → *Use 24-hour format*).
+- **Shelf Management**: Long-press OK on any app on the shelf to enter jiggle mode; press Left/Right to rearrange or Down to hide. Slots for uninstalled apps are automatically cleaned up.
 
 Changed something? Run `./build.sh` and install again. Keep `freemytv.keystore`: updates are signed with it.
 
@@ -150,6 +158,8 @@ It's your code, and Claude Code finds its way around it. Try:
 | [`HomeData.java`](app/src/io/freemytv/HomeData.java) | Weather and prices |
 | [`HomeApps.java`](app/src/io/freemytv/HomeApps.java) | The shelf, inputs and All Apps |
 | [`DreamView.java`](app/src/io/freemytv/DreamView.java) | The screensaver |
+| [`ScreensaverActivity.java`](app/src/io/freemytv/ScreensaverActivity.java) | Instant screensaver launch on Back button |
+| [`Landscapes.java`](app/src/io/freemytv/Landscapes.java) | Bing daily landscape wallpapers cache |
 | [`SettingsActivity.java`](app/src/io/freemytv/SettingsActivity.java) | The settings screen (the app's icon) |
 | [`Prefs.java`](app/src/io/freemytv/Prefs.java) | Settings changed on the TV |
 | [`RemoteKeys.java`](app/src/io/freemytv/RemoteKeys.java) | The TCL remote's app buttons |
